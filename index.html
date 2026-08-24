@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>家庭日常提醒看板</title>
+  <title>家庭日常提醒看板 (雲端同步版)</title>
   <style>
     :root {
       --bg-color: #f0f4f8;
@@ -78,10 +78,9 @@
   </div>
 
   <div class="grid">
-    <!-- 1. 刷牙計時與打卡 -->
     <div class="card">
       <h2>🪥 刷牙計時打卡</h2>
-      <div id="timer" class="timer-display">02:00</div>
+      <div id="timer" class="timer-display">03:00</div>
       <div id="zone-guide" class="zone-indicator">準備開始刷牙</div>
       <div class="controls">
         <button id="btn-start" onclick="toggleTimer()">開始計時</button>
@@ -96,7 +95,6 @@
       </div>
     </div>
 
-    <!-- 2. Timmy 讀書計畫看板 -->
     <div class="card">
       <h2>📚 Timmy 讀書計畫</h2>
       <div class="sub-section study">
@@ -108,7 +106,6 @@
       </div>
     </div>
 
-    <!-- 3. 早餐備忘清單 -->
     <div class="card">
       <h2>🍳 早餐備忘清單 (早晨提醒)</h2>
       <div class="sub-section timmy">
@@ -123,7 +120,6 @@
       </div>
     </div>
 
-    <!-- 4. 晚餐後今日待辦 -->
     <div class="card">
       <h2>🍽️ 晚餐後應完成事項 (晚間提醒)</h2>
       <div class="sub-section timmy">
@@ -138,7 +134,6 @@
       </div>
     </div>
 
-    <!-- 5. 今日輪值家事 -->
     <div class="card">
       <h2>
         <span>🧹 今日輪值家事</span>
@@ -149,7 +144,6 @@
     </div>
   </div>
 
-  <!-- 家事自訂彈窗 -->
   <dialog id="chore-modal">
     <h3 style="margin-bottom: 12px;">設定每週家事輪值內容</h3>
     <div id="chore-edit-list"></div>
@@ -160,327 +154,8 @@
   </dialog>
 
   <script>
-    // ⚠️ 請將雙引號內的內容換成您的 Google Apps Script 網址
-    const API_URL = "YOUR_GAS_API_URL_HERE";
+    // ⚠️ 請在此處貼上您的 Google Apps Script 網頁應用程式網址
+    const API_URL = "https://script.google.com/macros/s/AKfycby0wGYcXHbGfaG8UEI7qt4eqVvYEX2E95hQFC4qNWMNa_dPeMr5v2zMGO__P6o7WSM74g/exec";
 
     const members = ['爸爸', '媽媽', 'Timmy', 'Chloe'];
-    const memberIdMap = { '爸爸': 'father', '媽媽': 'mother', 'Timmy': 'timmy', 'Chloe': 'chloe' };
-    
-    let cloudData = {
-      morning_timmy: [], morning_chloe: [],
-      night_timmy: [], night_chloe: [],
-      study_timmy: [],
-      brush: { "爸爸": {}, "媽媽": {}, "Timmy": {}, "Chloe": {} }
-    };
-
-    const sheetToKeyMap = {
-      'Timmy': 'morning_timmy',
-      'Chloe': 'morning_chloe',
-      'Night_Timmy': 'night_timmy',
-      'Night_Chloe': 'night_chloe',
-      'Study_Timmy': 'study_timmy'
-    };
-
-    const defaultChores = [
-      { day: '週日', person: '全體成員', chore: '大掃除與收垃圾' },
-      { day: '週一', person: '爸爸', chore: '洗碗與擦餐桌' },
-      { day: '週二', person: 'Timmy', chore: '倒垃圾與資源回收' },
-      { day: '週三', person: '媽媽', chore: '收摺衣服與整理客廳' },
-      { day: '週四', person: 'Chloe', chore: '擦餐桌與植物澆水' },
-      { day: '週五', person: '爸爸', chore: '倒垃圾與廚餘清理' },
-      { day: '週六', person: 'Timmy & Chloe', chore: '吸地與拖地' }
-    ];
-
-    let timerInterval = null;
-    let timeLeft = 120;
-    let isRunning = false;
-    let triggeredToday = {};
-
-    function speak(text) {
-      if ('speechSynthesis' in window) {
-        window.speechSynthesis.cancel();
-        const utterance = new SpeechSynthesisUtterance(text);
-        utterance.lang = 'zh-TW';
-        utterance.rate = 1.0;
-        window.speechSynthesis.speak(utterance);
-      }
-    }
-
-    function testSpeech() {
-      speak("語音功能正常運作中。");
-    }
-
-    // 1. 新增事項（畫面立即顯示 + 背景傳雲端）
-    async function handleAddTask(sheetName, inputId) {
-      const input = document.getElementById(inputId);
-      const text = input.value.trim();
-      if (!text) return;
-      input.value = '';
-
-      const dataKey = sheetToKeyMap[sheetName];
-      if (!cloudData[dataKey]) cloudData[dataKey] = [];
-      cloudData[dataKey].push({ id: Date.now(), text: text, done: false });
-      renderLists();
-
-      await postToCloud({ action: 'add_task', sheetName: sheetName, text: text });
-      setTimeout(fetchCloudData, 2000);
-    }
-
-    // 2. 勾選事項（畫面立即變更 + 背景傳雲端）
-    async function handleToggleTask(sheetName, rowId, currentDone, dataKey) {
-      const newDone = !currentDone;
-      const item = cloudData[dataKey].find(i => i.id === rowId);
-      if (item) item.done = newDone;
-      renderLists();
-
-      await postToCloud({ action: 'toggle_task', sheetName: sheetName, rowId: rowId, done: newDone });
-    }
-
-    // 3. 刷牙打卡（畫面立即點亮 + 背景傳雲端）
-    async function handleBrushCheck(name) {
-      const currentHour = new Date().getHours();
-      const session = currentHour < 14 ? 'morning' : 'night';
-      
-      if (!cloudData.brush[name]) cloudData.brush[name] = {};
-      cloudData.brush[name][session] = true;
-      renderBrushStatus();
-      
-      speak(`${name}${session === 'morning' ? '早上' : '晚上'}刷牙打卡成功`);
-      await postToCloud({ action: 'brush_check', member: name, session: session });
-    }
-
-    // 雲端資料同步
-    async function fetchCloudData() {
-      if (!API_URL || API_URL === "https://script.google.com/macros/s/AKfycby0wGYcXHbGfaG8UEI7qt4eqVvYEX2E95hQFC4qNWMNa_dPeMr5v2zMGO__P6o7WSM74g/exec") {
-        document.getElementById('sync-status').innerText = "⚠️ 尚未設定 Google API 網址";
-        return;
-      }
-      document.getElementById('sync-status').innerText = "☁️ 同步中...";
-      try {
-        const res = await fetch(API_URL, { method: 'GET', redirect: 'follow' });
-        if (res.ok) {
-          cloudData = await res.json();
-          document.getElementById('sync-status').innerText = "✅ 雲端已同步 (" + new Date().toLocaleTimeString().substring(0,5) + ")";
-          renderBrushStatus();
-          renderLists();
-        }
-      } catch (err) {
-        document.getElementById('sync-status').innerText = "❌ 同步失敗，使用本地暫存";
-      }
-    }
-
-    async function postToCloud(payload) {
-      if (!API_URL || API_URL === "YOUR_GAS_API_URL_HERE") return;
-      try {
-        await fetch(API_URL, {
-          method: 'POST',
-          mode: 'no-cors',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-      } catch (e) {
-        console.error("雲端寫入失敗", e);
-      }
-    }
-
-    // 動態語音播報
-    function buildDynamicBroadcast(period) {
-      if (period === 'morning') {
-        const timmyItems = (cloudData.morning_timmy || []).filter(i => !i.done).map(i => i.text);
-        const chloeItems = (cloudData.morning_chloe || []).filter(i => !i.done).map(i => i.text);
-        let text = "早安！現在是早上刷牙與早餐時間。";
-        if (timmyItems.length > 0) text += `Timmy請記得：${timmyItems.join('、')}。`;
-        if (chloeItems.length > 0) text += `Chloe請記得：${chloeItems.join('、')}。`;
-        if (timmyItems.length === 0 && chloeItems.length === 0) text += "今天沒有晨間備忘事項。";
-        return text;
-      } else if (period === 'dinner') {
-        const timmyItems = (cloudData.night_timmy || []).filter(i => !i.done).map(i => i.text);
-        const chloeItems = (cloudData.night_chloe || []).filter(i => !i.done).map(i => i.text);
-        let text = "晚餐時間到了！請確認今日晚間應完成事項。";
-        if (timmyItems.length > 0) text += `Timmy待辦有：${timmyItems.join('、')}。`;
-        if (chloeItems.length > 0) text += `Chloe待辦有：${chloeItems.join('、')}。`;
-        if (timmyItems.length === 0 && chloeItems.length === 0) text += "今日晚間待辦皆已完成！";
-        return text;
-      }
-    }
-
-    // 時鐘與排程
-    function updateClock() {
-      const now = new Date();
-      const timeStr = now.toTimeString().split(' ')[0];
-      const hmStr = timeStr.substring(0, 5);
-      const dateStr = `${now.getFullYear()}年${now.getMonth()+1}月${now.getDate()}日 星期${['日','一','二','三','四','五','六'][now.getDay()]}`;
-      
-      document.getElementById('clock').innerText = timeStr;
-      document.getElementById('date-display').innerText = dateStr;
-
-      if (now.getSeconds() === 0 && now.getMinutes() % 2 === 0) fetchCloudData();
-
-      if (hmStr === "07:00" && !triggeredToday["07:00"]) {
-        speak(buildDynamicBroadcast('morning'));
-        triggeredToday["07:00"] = true;
-      }
-      if (hmStr === "19:30" && !triggeredToday["19:30"]) {
-        speak(buildDynamicBroadcast('dinner'));
-        triggeredToday["19:30"] = true;
-      }
-      if (hmStr === "21:00" && !triggeredToday["21:00"]) {
-        const chores = getChores();
-        const chore = chores[now.getDay()];
-        speak(`睡前時間到了，今日輪值由${chore.person}負責${chore.chore}，請大家完成睡前刷牙打卡！`);
-        triggeredToday["21:00"] = true;
-      }
-    }
-    setInterval(updateClock, 1000);
-
-    // 刷牙計時
-    function updateTimerDisplay() {
-      const m = Math.floor(timeLeft / 60).toString().padStart(2, '0');
-      const s = (timeLeft % 60).toString().padStart(2, '0');
-      document.getElementById('timer').innerText = `${m}:${s}`;
-
-      const guide = document.getElementById('zone-guide');
-      if (timeLeft > 90) guide.innerText = "右上區 & 左上區 外側";
-      else if (timeLeft > 60) guide.innerText = "右上區 & 左上區 咬合面與內側";
-      else if (timeLeft > 30) guide.innerText = "右下區 & 左下區 外側";
-      else if (timeLeft > 0) guide.innerText = "右下區 & 左下區 咬合面與舌側";
-      else guide.innerText = "🎉 刷牙完成！請點擊頭像打卡！";
-    }
-
-    function toggleTimer() {
-      const btn = document.getElementById('btn-start');
-      if (isRunning) {
-        clearInterval(timerInterval);
-        btn.innerText = "繼續計時";
-        isRunning = false;
-      } else {
-        if (timeLeft <= 0) timeLeft = 120;
-        btn.innerText = "暫停";
-        isRunning = true;
-        speak("開始刷牙，請照提示清潔分區。");
-        timerInterval = setInterval(() => {
-          timeLeft--;
-          updateTimerDisplay();
-          if (timeLeft === 90 || timeLeft === 60 || timeLeft === 30) speak("請換區域");
-          if (timeLeft <= 0) {
-            clearInterval(timerInterval);
-            isRunning = false;
-            btn.innerText = "開始計時";
-            speak("刷牙完成，請點選頭像登記打卡。");
-          }
-        }, 1000);
-      }
-    }
-
-    function resetTimer() {
-      clearInterval(timerInterval);
-      isRunning = false;
-      timeLeft = 120;
-      document.getElementById('btn-start').innerText = "開始計時";
-      document.getElementById('zone-guide').innerText = "準備開始刷牙";
-      updateTimerDisplay();
-    }
-
-    function renderBrushStatus() {
-      members.forEach(m => {
-        const id = memberIdMap[m];
-        const statusEl = document.getElementById(`st-${id}`);
-        const cardEl = document.getElementById(`m-${id}`);
-        const mRecord = (cloudData.brush && cloudData.brush[m]) || {};
-
-        cardEl.className = 'member-btn';
-        if (mRecord.morning && mRecord.night) {
-          cardEl.classList.add('done-all');
-          statusEl.innerText = '早晚完成 ✓';
-        } else if (mRecord.morning) {
-          cardEl.classList.add('done-morning');
-          statusEl.innerText = '早已打卡 ☀️';
-        } else if (mRecord.night) {
-          cardEl.classList.add('done-night');
-          statusEl.innerText = '晚已打卡 🌙';
-        } else {
-          statusEl.innerText = '未打卡';
-        }
-      });
-    }
-
-    function renderLists() {
-      const configs = [
-        { key: 'morning_timmy', sheet: 'Timmy', el: 'morning-timmy-list' },
-        { key: 'morning_chloe', sheet: 'Chloe', el: 'morning-chloe-list' },
-        { key: 'night_timmy', sheet: 'Night_Timmy', el: 'night-timmy-list' },
-        { key: 'night_chloe', sheet: 'Night_Chloe', el: 'night-chloe-list' },
-        { key: 'study_timmy', sheet: 'Study_Timmy', el: 'study-timmy-list' }
-      ];
-
-      configs.forEach(cfg => {
-        const el = document.getElementById(cfg.el);
-        const items = cloudData[cfg.key] || [];
-        el.innerHTML = items.length ? '' : '<li style="color: var(--text-muted); font-size:0.85rem;">目前無事項</li>';
-        items.forEach(item => {
-          const li = document.createElement('li');
-          if (item.done) li.classList.add('completed');
-          li.innerHTML = `
-            <input type="checkbox" ${item.done ? 'checked' : ''} onchange="handleToggleTask('${cfg.sheet}', ${item.id}, ${item.done}, '${cfg.key}')">
-            <span style="flex:1; font-size:0.85rem;">${item.text}</span>
-          `;
-          el.appendChild(li);
-        });
-      });
-    }
-
-    function getChores() {
-      return JSON.parse(localStorage.getItem('family_chores')) || defaultChores;
-    }
-
-    function renderChores() {
-      const chores = getChores();
-      const dayIdx = new Date().getDay();
-      const todayChore = chores[dayIdx];
-      document.getElementById('chore-display').innerText = `${todayChore.person}：${todayChore.chore}`;
-
-      const scheduleEl = document.getElementById('chore-schedule');
-      scheduleEl.innerHTML = chores.map(c => `
-        <li style="border:none; padding: 2px 0;">
-          <span class="badge">${c.day}</span> <b>${c.person}</b> - ${c.chore}
-        </li>
-      `).join('');
-    }
-
-    function openChoreModal() {
-      const chores = getChores();
-      const container = document.getElementById('chore-edit-list');
-      container.innerHTML = chores.map((c, i) => `
-        <div class="edit-row">
-          <span>${c.day}</span>
-          <input type="text" id="chore-p-${i}" value="${c.person}" style="width:90px;" placeholder="負責人">
-          <input type="text" id="chore-c-${i}" value="${c.chore}" style="flex:1;" placeholder="家事內容">
-        </div>
-      `).join('');
-      document.getElementById('chore-modal').showModal();
-    }
-
-    function saveChores() {
-      const updated = [];
-      const days = ['週日','週一','週二','週三','週四','週五','週六'];
-      for (let i = 0; i < 7; i++) {
-        updated.push({
-          day: days[i],
-          person: document.getElementById(`chore-p-${i}`).value.trim() || '無',
-          chore: document.getElementById(`chore-c-${i}`).value.trim() || '無'
-        });
-      }
-      localStorage.setItem('family_chores', JSON.stringify(updated));
-      document.getElementById('chore-modal').close();
-      renderChores();
-    }
-
-    // 初始化啟動
-    updateClock();
-    renderBrushStatus();
-    renderLists();
-    renderChores();
-    fetchCloudData();
-  </script>
-</body>
-</html>
+    const memberIdMap = { '爸爸': 'father', '媽媽': 'mother', '
