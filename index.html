@@ -232,7 +232,6 @@
       setTimeout(fetchCloudData, 2000);
     }
 
-    // ✨ 勾選任務（即時變更 + 記錄到雲端 TaskLogs）
     async function handleToggleTask(sheetName, rowId, currentDone, dataKey, category, member) {
       const newDone = !currentDone;
       const item = cloudData[dataKey].find(i => i.id === rowId);
@@ -287,7 +286,7 @@
       });
     }
 
-    // --- JSONP 跨來源安全連線 ---
+    // JSONP 跨來源安全連線
     window.handleCloudResponse = function(data) {
       cloudData.morning_timmy = data.morning_timmy || [];
       cloudData.morning_chloe = data.morning_chloe || [];
@@ -366,7 +365,7 @@
       document.getElementById('clock').innerText = timeStr;
       document.getElementById('date-display').innerText = dateStr;
 
-      // ✨ 午夜 00:00 自動全看板歸零，並命令雲端試算表重設勾選
+      // 午夜 00:00 自動全看板歸零
       if (hmStr === "00:00" && now.getSeconds() === 0) {
         ['morning_timmy', 'morning_chloe', 'night_timmy', 'night_chloe', 'study_timmy'].forEach(k => {
           if (cloudData[k]) cloudData[k].forEach(item => item.done = false);
