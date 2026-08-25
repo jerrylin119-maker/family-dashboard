@@ -165,10 +165,21 @@
     const members = ['爸爸', '媽媽', 'Timmy', 'Chloe'];
     const memberIdMap = { '爸爸': 'father', '媽媽': 'mother', 'Timmy': 'timmy', 'Chloe': 'chloe' };
     
+    const defaultChores = [
+      { day: '週日', person: '爸爸', chore: '大掃除與清貓沙還有' },
+      { day: '週一', person: 'Timmy', chore: '清貓沙' },
+      { day: '週二', person: 'Chloe', chore: '清貓沙（含白捅）' },
+      { day: '週三', person: 'Timmy', chore: '清貓沙' },
+      { day: '週四', person: 'Chloe', chore: '清貓沙' },
+      { day: '週五', person: 'Timmy', chore: '清貓沙（含白捅）' },
+      { day: '週六', person: 'Chloe', chore: '清貓沙' }
+    ];
+
     let cloudData = {
       morning_timmy: [], morning_chloe: [],
       night_timmy: [], night_chloe: [],
       study_timmy: [],
+      chores: defaultChores,
       brush: { "爸爸": {}, "媽媽": {}, "Timmy": {}, "Chloe": {} }
     };
 
@@ -179,16 +190,6 @@
       'Night_Chloe': 'night_chloe',
       'Study_Timmy': 'study_timmy'
     };
-
-    const defaultChores = [
-      { day: '週日', person: '全體成員', chore: '大掃除與收垃圾' },
-      { day: '週一', person: '爸爸', chore: '洗碗與擦餐桌' },
-      { day: '週二', person: 'Timmy', chore: '倒垃圾與資源回收' },
-      { day: '週三', person: '媽媽', chore: '收摺衣服與整理客廳' },
-      { day: '週四', person: 'Chloe', chore: '擦餐桌與植物澆水' },
-      { day: '週五', person: '爸爸', chore: '倒垃圾與廚餘清理' },
-      { day: '週六', person: 'Timmy & Chloe', chore: '吸地與拖地' }
-    ];
 
     let timerInterval = null;
     let timeLeft = 180;
@@ -245,11 +246,22 @@
       await postToCloud({ action: 'brush_check', member: name, session: session });
     }
 
+    // --- JSONP 跨來源安全連線 ---
     window.handleCloudResponse = function(data) {
-      cloudData = data;
+      cloudData.morning_timmy = data.morning_timmy || [];
+      cloudData.morning_chloe = data.morning_chloe || [];
+      cloudData.night_timmy = data.night_timmy || [];
+      cloudData.night_chloe = data.night_chloe || [];
+      cloudData.study_timmy = data.study_timmy || [];
+      cloudData.brush = data.brush || {};
+      if (data.chores && data.chores.length === 7) {
+        cloudData.chores = data.chores;
+      }
+      
       document.getElementById('sync-status').innerText = "✅ 雲端已同步 (" + new Date().toLocaleTimeString().substring(0,5) + ")";
       renderBrushStatus();
       renderLists();
+      renderChores();
     };
 
     function fetchCloudData() {
@@ -325,7 +337,7 @@
         triggeredToday["19:30"] = true;
       }
       if (hmStr === "21:00" && !triggeredToday["21:00"]) {
-        const chores = getChores();
+        const chores = cloudData.chores || defaultChores;
         const chore = chores[now.getDay()];
         speak(`睡前時間到了，今日輪值由${chore.person}負責${chore.chore}，請大家完成睡前刷牙打卡！`);
         triggeredToday["21:00"] = true;
@@ -428,14 +440,10 @@
       });
     }
 
-    function getChores() {
-      return JSON.parse(localStorage.getItem('family_chores')) || defaultChores;
-    }
-
     function renderChores() {
-      const chores = getChores();
+      const chores = cloudData.chores || defaultChores;
       const dayIdx = new Date().getDay();
-      const todayChore = chores[dayIdx];
+      const todayChore = chores[dayIdx] || defaultChores[dayIdx];
       document.getElementById('chore-display').innerText = `${todayChore.person}：${todayChore.chore}`;
 
       const scheduleEl = document.getElementById('chore-schedule');
@@ -447,7 +455,7 @@
     }
 
     function openChoreModal() {
-      const chores = getChores();
+      const chores = cloudData.chores || defaultChores;
       const container = document.getElementById('chore-edit-list');
       container.innerHTML = chores.map((c, i) => `
         <div class="edit-row">
@@ -459,7 +467,7 @@
       document.getElementById('chore-modal').showModal();
     }
 
-    function saveChores() {
+    async function saveChores() {
       const updated = [];
       const days = ['週日','週一','週二','週三','週四','週五','週六'];
       for (let i = 0; i < 7; i++) {
@@ -469,9 +477,13 @@
           chore: document.getElementById(`chore-c-${i}`).value.trim() || '無'
         });
       }
-      localStorage.setItem('family_chores', JSON.stringify(updated));
+      cloudData.chores = updated;
       document.getElementById('chore-modal').close();
       renderChores();
+
+      // ✨ 即時同步寫入 Google 試算表
+      await postToCloud({ action: 'update_chores', chores: updated });
+      setTimeout(fetchCloudData, 1500);
     }
 
     // 初始啟動
