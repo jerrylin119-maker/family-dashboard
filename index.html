@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>家庭日常提醒看板 (雲端同步版)</title>
+  <title>家庭日常提醒看板 (雲端 6 宮格版)</title>
   <style>
     :root {
       --bg-color: #f0f4f8;
@@ -13,51 +13,90 @@
       --timmy: #0284c7;
       --chloe: #db2777;
       --study: #8b5cf6;
+      --parent: #ea580c;
       --text: #1f2937;
       --text-muted: #6b7280;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
     body { background: var(--bg-color); color: var(--text); padding: 16px; }
-    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+    
+    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
     .clock { font-size: 2rem; font-weight: bold; color: var(--primary); }
     .sync-status { font-size: 0.8rem; color: var(--accent); font-weight: bold; }
-    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; }
-    .card { background: var(--card-bg); border-radius: 16px; padding: 18px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
-    .card h2 { font-size: 1.2rem; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
     
-    /* 刷牙計時與打卡 */
-    .timer-display { font-size: 3.2rem; font-weight: 800; text-align: center; color: var(--primary); margin: 6px 0; }
-    .zone-indicator { text-align: center; font-size: 1rem; font-weight: 600; color: #f59e0b; min-height: 24px; }
-    .controls { display: flex; gap: 8px; justify-content: center; margin-bottom: 12px; }
-    button { background: var(--primary); color: white; border: none; padding: 8px 16px; border-radius: 8px; font-size: 0.95rem; cursor: pointer; font-weight: bold; }
+    /* 完美 6 宮格 (3 欄 x 2 列) */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+    }
+    @media (max-width: 1024px) {
+      .grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 640px) {
+      .grid { grid-template-columns: 1fr; }
+    }
+
+    .card {
+      background: var(--card-bg);
+      border-radius: 16px;
+      padding: 16px 18px;
+      box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      min-height: 310px;
+    }
+    .card h2 { font-size: 1.15rem; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+    
+    /* 刷牙計時與英文笑話展示 */
+    .timer-display { font-size: 3rem; font-weight: 800; text-align: center; color: var(--primary); margin: 2px 0; }
+    .joke-box {
+      background: #f8fafc;
+      border: 1.5px dashed #cbd5e1;
+      border-radius: 10px;
+      padding: 8px 10px;
+      margin: 6px 0;
+      min-height: 52px;
+      text-align: center;
+      font-size: 0.85rem;
+    }
+    .joke-q { font-weight: bold; color: #1e293b; }
+    .joke-a { color: #d97706; font-weight: 600; margin-top: 2px; }
+
+    .controls { display: flex; gap: 8px; justify-content: center; margin-bottom: 8px; }
+    button { background: var(--primary); color: white; border: none; padding: 7px 14px; border-radius: 8px; font-size: 0.9rem; cursor: pointer; font-weight: bold; }
     button:active { transform: scale(0.98); }
     button.btn-reset { background: var(--text-muted); }
-    .member-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-top: 10px; }
-    .member-btn { background: #e5e7eb; color: var(--text); border-radius: 10px; padding: 8px 2px; text-align: center; cursor: pointer; border: 2px solid transparent; font-size: 0.9rem; }
+    
+    .member-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; }
+    .member-btn { background: #e5e7eb; color: var(--text); border-radius: 8px; padding: 6px 2px; text-align: center; cursor: pointer; border: 2px solid transparent; font-size: 0.85rem; }
     .member-btn.done-morning { border-color: #f59e0b; background: #fef3c7; }
     .member-btn.done-night { border-color: #10b981; background: #d1fae5; }
     .member-btn.done-all { border-color: #10b981; background: #a7f3d0; font-weight: bold; }
-    .member-btn span { display: block; font-size: 0.75rem; color: var(--text-muted); margin-top: 3px; }
+    .member-btn span { display: block; font-size: 0.7rem; color: var(--text-muted); margin-top: 2px; }
 
     /* 清單樣式 */
-    ul { list-style: none; max-height: 140px; overflow-y: auto; }
-    li { display: flex; align-items: center; gap: 8px; padding: 5px 0; border-bottom: 1px solid #f3f4f6; }
+    ul { list-style: none; max-height: 160px; overflow-y: auto; }
+    li { display: flex; align-items: center; gap: 6px; padding: 4px 0; border-bottom: 1px solid #f3f4f6; }
     li.completed { text-decoration: line-through; color: var(--text-muted); }
-    input[type="checkbox"] { width: 18px; height: 18px; cursor: pointer; }
+    input[type="checkbox"] { width: 17px; height: 17px; cursor: pointer; }
     .input-group { display: flex; gap: 6px; margin-top: 6px; }
     .input-group input { flex: 1; padding: 5px 8px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.85rem; }
     .input-group button { padding: 5px 10px; font-size: 0.8rem; }
-    .sub-section { margin-bottom: 12px; border-left: 3px solid var(--primary); padding-left: 8px; }
+    
+    .sub-section { margin-bottom: 8px; border-left: 3px solid var(--primary); padding-left: 8px; }
     .sub-section.timmy { border-color: var(--timmy); }
     .sub-section.chloe { border-color: var(--chloe); }
     .sub-section.study { border-color: var(--study); }
+    .sub-section.parent { border-color: var(--parent); }
+
     .badge { padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; background: #e5e7eb; }
-    .chore-highlight { font-size: 1.25rem; font-weight: bold; color: #ec4899; text-align: center; margin: 8px 0; }
-    .chore-action-box { text-align: center; margin: 10px 0; }
-    .btn-chore-done { background: #10b981; color: white; padding: 8px 18px; font-size: 0.95rem; border-radius: 8px; cursor: pointer; }
+    .chore-highlight { font-size: 1.15rem; font-weight: bold; color: #ec4899; text-align: center; margin: 4px 0; }
+    .chore-action-box { text-align: center; margin: 6px 0; }
+    .btn-chore-done { background: #10b981; color: white; padding: 6px 16px; font-size: 0.9rem; border-radius: 8px; cursor: pointer; }
     .btn-chore-done.completed { background: #d1fae5; color: #065f46; border: 2px solid #10b981; cursor: default; }
-    
-    /* 彈窗樣式 */
+
     dialog { border: none; border-radius: 12px; padding: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); width: 90%; max-width: 450px; margin: auto; }
     dialog::backdrop { background: rgba(0,0,0,0.4); }
     .edit-row { display: flex; gap: 6px; margin-bottom: 8px; align-items: center; }
@@ -69,97 +108,129 @@
 
   <div class="header">
     <div>
-      <h1 style="font-size: 1.4rem;">🏠 家庭日常提醒看板</h1>
-      <div id="date-display" style="color: var(--text-muted); font-size: 0.9rem;"></div>
+      <h1 style="font-size: 1.35rem;">🏠 家庭日常提醒看板</h1>
+      <div id="date-display" style="color: var(--text-muted); font-size: 0.85rem;"></div>
       <div id="sync-status" class="sync-status">☁️ 雲端狀態檢查中...</div>
     </div>
     <div style="text-align: right;">
       <div id="clock" class="clock">00:00:00</div>
-      <button onclick="fetchCloudData()" style="background: #e5e7eb; color: var(--text); padding: 4px 8px; font-size: 0.75rem; border-radius: 4px;">🔄 重新整理</button>
-      <button onclick="testSpeech()" style="background: #e5e7eb; color: var(--text); padding: 4px 8px; font-size: 0.75rem; border-radius: 4px;">🔊 語音測試</button>
+      <button onclick="fetchCloudData()" style="background: #e5e7eb; color: var(--text); padding: 3px 8px; font-size: 0.75rem; border-radius: 4px;">🔄 重新整理</button>
+      <button onclick="testSpeech()" style="background: #e5e7eb; color: var(--text); padding: 3px 8px; font-size: 0.75rem; border-radius: 4px;">🔊 語音測試</button>
     </div>
   </div>
 
+  <!-- 6 宮格主要佈局 -->
   <div class="grid">
-    <!-- 1. 刷牙計時與打卡 (3分鐘) -->
+    
+    <!-- 格子 1：刷牙計時與英文笑話 -->
     <div class="card">
-      <h2>🪥 刷牙計時打卡</h2>
-      <div id="timer" class="timer-display">03:00</div>
-      <div id="zone-guide" class="zone-indicator">準備開始刷牙</div>
-      <div class="controls">
-        <button id="btn-start" onclick="toggleTimer()">開始計時</button>
-        <button class="btn-reset" onclick="resetTimer()">重設</button>
+      <div>
+        <h2>🪥 刷牙計時 (聽英文笑話)</h2>
+        <div id="timer" class="timer-display">03:00</div>
+        <div class="joke-box" id="joke-container">
+          <div class="joke-q" id="joke-q">準備開始刷牙 🪥</div>
+          <div class="joke-a" id="joke-a">點擊「開始計時」聽第 1 則笑話</div>
+        </div>
+        <div class="controls">
+          <button id="btn-start" onclick="toggleTimer()">開始計時</button>
+          <button class="btn-reset" onclick="resetTimer()">重設</button>
+        </div>
       </div>
-      <div style="font-size: 0.85rem; font-weight: 600; margin-bottom: 4px;">點擊頭像記錄打卡：</div>
-      <div class="member-grid">
-        <div class="member-btn" id="m-father" onclick="handleBrushCheck('爸爸')"><div>👨 爸爸</div><span id="st-father">未打卡</span></div>
-        <div class="member-btn" id="m-mother" onclick="handleBrushCheck('媽媽')"><div>👩 媽媽</div><span id="st-mother">未打卡</span></div>
-        <div class="member-btn" id="m-timmy" onclick="handleBrushCheck('Timmy')"><div>👦 Timmy</div><span id="st-timmy">未打卡</span></div>
-        <div class="member-btn" id="m-chloe" onclick="handleBrushCheck('Chloe')"><div>👧 Chloe</div><span id="st-chloe">未打卡</span></div>
-      </div>
-    </div>
-
-    <!-- 2. Timmy 讀書計畫看板 -->
-    <div class="card">
-      <h2>📚 Timmy 讀書計畫</h2>
-      <div class="sub-section study">
-        <ul id="study-timmy-list"></ul>
-        <div class="input-group">
-          <input type="text" id="study-timmy-input" placeholder="輸入今日科目/進度 (例: 英文第3課)...">
-          <button style="background: var(--study);" onclick="handleAddTask('Study_Timmy', 'study-timmy-input')">新增</button>
+      <div>
+        <div style="font-size: 0.8rem; font-weight: 600; margin-bottom: 3px;">點擊頭像打卡：</div>
+        <div class="member-grid">
+          <div class="member-btn" id="m-father" onclick="handleBrushCheck('爸爸')"><div>👨 爸爸</div><span id="st-father">未打卡</span></div>
+          <div class="member-btn" id="m-mother" onclick="handleBrushCheck('媽媽')"><div>👩 媽媽</div><span id="st-mother">未打卡</span></div>
+          <div class="member-btn" id="m-timmy" onclick="handleBrushCheck('Timmy')"><div>👦 Timmy</div><span id="st-timmy">未打卡</span></div>
+          <div class="member-btn" id="m-chloe" onclick="handleBrushCheck('Chloe')"><div>👧 Chloe</div><span id="st-chloe">未打卡</span></div>
         </div>
       </div>
     </div>
 
-    <!-- 3. 早餐備忘清單 (早晨提醒) -->
+    <!-- 格子 2：Timmy 讀書計畫 -->
     <div class="card">
-      <h2>🍳 早餐備忘清單 (早晨提醒)</h2>
-      <div class="sub-section timmy">
-        <b style="color: var(--timmy); font-size: 0.9rem;">👦 Timmy 晨間備忘</b>
-        <ul id="morning-timmy-list"></ul>
-        <div class="input-group"><input type="text" id="morning-timmy-input" placeholder="新增備忘..."><button style="background: var(--timmy);" onclick="handleAddTask('Timmy', 'morning-timmy-input')">新增</button></div>
+      <div>
+        <h2>📚 Timmy 讀書計畫</h2>
+        <div class="sub-section study">
+          <ul id="study-timmy-list"></ul>
+        </div>
       </div>
-      <div class="sub-section chloe">
-        <b style="color: var(--chloe); font-size: 0.9rem;">👧 Chloe 晨間備忘</b>
-        <ul id="morning-chloe-list"></ul>
-        <div class="input-group"><input type="text" id="morning-chloe-input" placeholder="新增備忘..."><button style="background: var(--chloe);" onclick="handleAddTask('Chloe', 'morning-chloe-input')">新增</button></div>
+      <div class="input-group">
+        <input type="text" id="study-timmy-input" placeholder="新增今日科目/進度 (例: 英文第3課)...">
+        <button style="background: var(--study);" onclick="handleAddTask('Study_Timmy', 'study-timmy-input')">新增</button>
       </div>
     </div>
 
-    <!-- 4. 晚餐後今日待辦 (晚間提醒) -->
+    <!-- 格子 3：早餐備忘清單 (早晨提醒) -->
     <div class="card">
-      <h2>🍽️ 晚餐後應完成事項 (晚間提醒)</h2>
-      <div class="sub-section timmy">
-        <b style="color: var(--timmy); font-size: 0.9rem;">👦 Timmy 晚間待辦</b>
-        <ul id="night-timmy-list"></ul>
-        <div class="input-group"><input type="text" id="night-timmy-input" placeholder="新增待辦..."><button style="background: var(--timmy);" onclick="handleAddTask('Night_Timmy', 'night-timmy-input')">新增</button></div>
-      </div>
-      <div class="sub-section chloe">
-        <b style="color: var(--chloe); font-size: 0.9rem;">👧 Chloe 晚間待辦</b>
-        <ul id="night-chloe-list"></ul>
-        <div class="input-group"><input type="text" id="night-chloe-input" placeholder="新增待辦..."><button style="background: var(--chloe);" onclick="handleAddTask('Night_Chloe', 'night-chloe-input')">新增</button></div>
+      <div>
+        <h2>🍳 早餐備忘清單</h2>
+        <div class="sub-section timmy">
+          <b style="color: var(--timmy); font-size: 0.85rem;">👦 Timmy 晨間備忘</b>
+          <ul id="morning-timmy-list"></ul>
+          <div class="input-group"><input type="text" id="morning-timmy-input" placeholder="新增備忘..."><button style="background: var(--timmy);" onclick="handleAddTask('Timmy', 'morning-timmy-input')">新增</button></div>
+        </div>
+        <div class="sub-section chloe">
+          <b style="color: var(--chloe); font-size: 0.85rem;">👧 Chloe 晨間備忘</b>
+          <ul id="morning-chloe-list"></ul>
+          <div class="input-group"><input type="text" id="morning-chloe-input" placeholder="新增備忘..."><button style="background: var(--chloe);" onclick="handleAddTask('Chloe', 'morning-chloe-input')">新增</button></div>
+        </div>
       </div>
     </div>
 
-    <!-- 5. 今日輪值家事 -->
+    <!-- 格子 4：晚餐後待辦事項 (晚間提醒) -->
     <div class="card">
-      <h2>
-        <span>🧹 今日輪值家事</span>
-        <button style="background: transparent; color: var(--primary); font-size: 0.8rem; padding: 2px 4px;" onclick="openChoreModal()">⚙️ 編輯每週輪值</button>
-      </h2>
-      <div id="chore-display" class="chore-highlight">載入中...</div>
-      <div class="chore-action-box">
-        <button id="btn-chore-done" class="btn-chore-done" onclick="handleChoreCheck()">✨ 點擊完成今日家事</button>
+      <div>
+        <h2>🍽️ 晚餐後應完成事項</h2>
+        <div class="sub-section timmy">
+          <b style="color: var(--timmy); font-size: 0.85rem;">👦 Timmy 晚間待辦</b>
+          <ul id="night-timmy-list"></ul>
+          <div class="input-group"><input type="text" id="night-timmy-input" placeholder="新增待辦..."><button style="background: var(--timmy);" onclick="handleAddTask('Night_Timmy', 'night-timmy-input')">新增</button></div>
+        </div>
+        <div class="sub-section chloe">
+          <b style="color: var(--chloe); font-size: 0.85rem;">👧 Chloe 晚間待辦</b>
+          <ul id="night-chloe-list"></ul>
+          <div class="input-group"><input type="text" id="night-chloe-input" placeholder="新增待辦..."><button style="background: var(--chloe);" onclick="handleAddTask('Night_Chloe', 'night-chloe-input')">新增</button></div>
+        </div>
       </div>
-      <ul id="chore-schedule" style="font-size: 0.85rem; color: var(--text-muted);"></ul>
     </div>
+
+    <!-- 格子 5：今日輪值家事 -->
+    <div class="card">
+      <div>
+        <h2>
+          <span>🧹 今日輪值家事</span>
+          <button style="background: transparent; color: var(--primary); font-size: 0.75rem; padding: 2px;" onclick="openChoreModal()">⚙️ 輪值設定</button>
+        </h2>
+        <div id="chore-display" class="chore-highlight">載入中...</div>
+        <div class="chore-action-box">
+          <button id="btn-chore-done" class="btn-chore-done" onclick="handleChoreCheck()">✨ 點擊完成今日家事</button>
+        </div>
+      </div>
+      <ul id="chore-schedule" style="font-size: 0.8rem; color: var(--text-muted); max-height: 110px;"></ul>
+    </div>
+
+    <!-- 格子 6：💌 爸媽的叮嚀 (✨ 新增第 6 格) -->
+    <div class="card">
+      <div>
+        <h2 style="color: var(--parent);">💌 爸媽的叮嚀與鼓勵</h2>
+        <div class="sub-section parent">
+          <ul id="parent-notes-list"></ul>
+        </div>
+      </div>
+      <div class="input-group">
+        <input type="text" id="parent-notes-input" placeholder="寫下給孩子的叮嚀或鼓勵...">
+        <button style="background: var(--parent);" onclick="handleAddTask('Notes', 'parent-notes-input')">新增</button>
+      </div>
+    </div>
+
   </div>
 
   <!-- 家事自訂彈窗 -->
   <dialog id="chore-modal">
-    <h3 style="margin-bottom: 12px;">設定每週家事輪值內容</h3>
+    <h3 style="margin-bottom: 10px;">設定每週家事輪值內容</h3>
     <div id="chore-edit-list"></div>
-    <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 14px;">
+    <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px;">
       <button class="btn-reset" onclick="document.getElementById('chore-modal').close()">取消</button>
       <button onclick="saveChores()">儲存更換</button>
     </div>
@@ -171,6 +242,17 @@
     const members = ['爸爸', '媽媽', 'Timmy', 'Chloe'];
     const memberIdMap = { '爸爸': 'father', '媽媽': 'mother', 'Timmy': 'timmy', 'Chloe': 'chloe' };
     
+    // 英文冷笑話庫 (Joke Q, A, 中文釋義)
+    const englishJokes = [
+      { q: "Why do we tell actors to 'break a leg'?", a: "Because every play has a cast!", zh: "為什麼祝演員好運要說斷條腿？因為每齣劇都有演員名單(cast也有石膏的意思)！" },
+      { q: "Why did the math book look sad?", a: "Because it had too many problems!", zh: "為什麼數學書看起來很難過？因為它有太多問題(題目)了！" },
+      { q: "Why can't a leopard hide?", a: "Because he is always spotted!", zh: "為什麼花豹藏不住？因為牠全身都是斑點(spotted也有被發現的意思)！" },
+      { q: "What is orange and sounds like a parrot?", a: "A carrot!", zh: "什麼東西是橘色的而且聽起來像鸚鵡(parrot)？是紅蘿蔔(carrot)！" },
+      { q: "What do you call a fake noodle?", a: "An impasta!", zh: "你怎麼稱呼假的義大利麵？冒牌貨(impasta 諧音 imposter)！" },
+      { q: "Why did the teddy bear say no to dessert?", a: "Because she was already stuffed!", zh: "為什麼泰迪熊不吃甜點？因為牠已經很飽了(stuffed也是填充玩具的意思)！" },
+      { q: "What do you call a sleeping dinosaur?", a: "A dino-snore!", zh: "你怎麼稱呼睡覺的恐龍？打呼龍(snore)！" }
+    ];
+
     const defaultChores = [
       { day: '週日', person: '爸爸', chore: '大掃除清貓砂' },
       { day: '週一', person: 'TIMMY', chore: '清貓砂' },
@@ -185,6 +267,7 @@
       morning_timmy: [], morning_chloe: [],
       night_timmy: [], night_chloe: [],
       study_timmy: [],
+      parent_notes: [{ id: 1, text: '每天保持好心情，多喝水！', done: false }],
       chores: defaultChores,
       chore_today_done: { done: false, time: '' },
       brush: { "爸爸": {}, "媽媽": {}, "Timmy": {}, "Chloe": {} }
@@ -195,26 +278,52 @@
       'Chloe': 'morning_chloe',
       'Night_Timmy': 'night_timmy',
       'Night_Chloe': 'night_chloe',
-      'Study_Timmy': 'study_timmy'
+      'Study_Timmy': 'study_timmy',
+      'Notes': 'parent_notes'
     };
 
     let timerInterval = null;
     let timeLeft = 180;
     let isRunning = false;
+    let currentJokeIndex1 = 0;
+    let currentJokeIndex2 = 1;
     let triggeredToday = {};
 
-    function speak(text) {
+    function speak(text, lang = 'zh-TW') {
       if ('speechSynthesis' in window) {
         window.speechSynthesis.cancel();
         const utterance = new SpeechSynthesisUtterance(text);
-        utterance.lang = 'zh-TW';
-        utterance.rate = 1.0;
+        utterance.lang = lang;
+        utterance.rate = 0.95;
         window.speechSynthesis.speak(utterance);
       }
     }
 
+    // 播放英文笑話
+    function tellEnglishJoke(joke) {
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        const u1 = new SpeechSynthesisUtterance(joke.q);
+        u1.lang = 'en-US';
+        u1.rate = 0.9;
+        
+        u1.onend = () => {
+          setTimeout(() => {
+            const u2 = new SpeechSynthesisUtterance(joke.a);
+            u2.lang = 'en-US';
+            u2.rate = 0.9;
+            window.speechSynthesis.speak(u2);
+          }, 800);
+        };
+        window.speechSynthesis.speak(u1);
+      }
+    }
+
     function testSpeech() {
-      speak("語音功能與家庭看板運作正常。");
+      speak("語音功能正常。以下為英文笑話測試：");
+      setTimeout(() => {
+        tellEnglishJoke(englishJokes[0]);
+      }, 1800);
     }
 
     async function handleAddTask(sheetName, inputId) {
@@ -238,8 +347,8 @@
       if (item) item.done = newDone;
       renderLists();
 
-      if (newDone && item) {
-        speak(`${member ? member : ''}已完成：${item.text}`);
+      if (newDone && item && member) {
+        speak(`${member}已完成：${item.text}`);
       }
 
       await postToCloud({
@@ -286,13 +395,14 @@
       });
     }
 
-    // JSONP 跨來源安全連線
+    // JSONP 跨來源同步
     window.handleCloudResponse = function(data) {
       cloudData.morning_timmy = data.morning_timmy || [];
       cloudData.morning_chloe = data.morning_chloe || [];
       cloudData.night_timmy = data.night_timmy || [];
       cloudData.night_chloe = data.night_chloe || [];
       cloudData.study_timmy = data.study_timmy || [];
+      cloudData.parent_notes = data.parent_notes && data.parent_notes.length ? data.parent_notes : cloudData.parent_notes;
       cloudData.brush = data.brush || {};
       cloudData.chore_today_done = data.chore_today_done || { done: false, time: '' };
       
@@ -331,29 +441,7 @@
           headers: { 'Content-Type': 'text/plain;charset=utf-8' },
           body: JSON.stringify(payload)
         });
-      } catch (e) {
-        console.error("雲端寫入失敗", e);
-      }
-    }
-
-    function buildDynamicBroadcast(period) {
-      if (period === 'morning') {
-        const timmyItems = (cloudData.morning_timmy || []).filter(i => !i.done).map(i => i.text);
-        const chloeItems = (cloudData.morning_chloe || []).filter(i => !i.done).map(i => i.text);
-        let text = "早安！現在是早上刷牙與早餐時間。";
-        if (timmyItems.length > 0) text += `Timmy請記得：${timmyItems.join('、')}。`;
-        if (chloeItems.length > 0) text += `Chloe請記得：${chloeItems.join('、')}。`;
-        if (timmyItems.length === 0 && chloeItems.length === 0) text += "今天沒有晨間備忘事項。";
-        return text;
-      } else if (period === 'dinner') {
-        const timmyItems = (cloudData.night_timmy || []).filter(i => !i.done).map(i => i.text);
-        const chloeItems = (cloudData.night_chloe || []).filter(i => !i.done).map(i => i.text);
-        let text = "晚餐時間到了！請確認今日晚間應完成事項。";
-        if (timmyItems.length > 0) text += `Timmy待辦有：${timmyItems.join('、')}。`;
-        if (chloeItems.length > 0) text += `Chloe待辦有：${chloeItems.join('、')}。`;
-        if (timmyItems.length === 0 && chloeItems.length === 0) text += "今日晚間待辦皆已完成！";
-        return text;
-      }
+      } catch (e) {}
     }
 
     function updateClock() {
@@ -365,27 +453,14 @@
       document.getElementById('clock').innerText = timeStr;
       document.getElementById('date-display').innerText = dateStr;
 
-      // 午夜 00:00 自動全看板歸零
-      if (hmStr === "00:00" && now.getSeconds() === 0) {
-        ['morning_timmy', 'morning_chloe', 'night_timmy', 'night_chloe', 'study_timmy'].forEach(k => {
-          if (cloudData[k]) cloudData[k].forEach(item => item.done = false);
-        });
-        cloudData.chore_today_done = { done: false, time: '' };
-        cloudData.brush = { "爸爸": {}, "媽媽": {}, "Timmy": {}, "Chloe": {} };
-        renderBrushStatus();
-        renderLists();
-        renderChores();
-        postToCloud({ action: 'midnight_reset' });
-      }
-
       if (now.getSeconds() === 0 && now.getMinutes() % 2 === 0) fetchCloudData();
 
       if (hmStr === "07:00" && !triggeredToday["07:00"]) {
-        speak(buildDynamicBroadcast('morning'));
+        speak("早安！現在是早上刷牙與早餐時間。");
         triggeredToday["07:00"] = true;
       }
       if (hmStr === "19:30" && !triggeredToday["19:30"]) {
-        speak(buildDynamicBroadcast('dinner'));
+        speak("晚餐時間到了！請確認今日晚間應完成事項。");
         triggeredToday["19:30"] = true;
       }
       if (hmStr === "21:00" && !triggeredToday["21:00"]) {
@@ -397,17 +472,11 @@
     }
     setInterval(updateClock, 1000);
 
+    // 刷牙計時與 2 則英文笑話展示
     function updateTimerDisplay() {
       const m = Math.floor(timeLeft / 60).toString().padStart(2, '0');
       const s = (timeLeft % 60).toString().padStart(2, '0');
       document.getElementById('timer').innerText = `${m}:${s}`;
-
-      const guide = document.getElementById('zone-guide');
-      if (timeLeft > 135) guide.innerText = "右上區 & 左上區 外側";
-      else if (timeLeft > 90) guide.innerText = "右上區 & 左上區 咬合面與內側";
-      else if (timeLeft > 45) guide.innerText = "右下區 & 左下區 外側";
-      else if (timeLeft > 0) guide.innerText = "右下區 & 左下區 咬合面與舌側";
-      else guide.innerText = "🎉 刷牙完成！請點擊頭像打卡！";
     }
 
     function toggleTimer() {
@@ -420,16 +489,40 @@
         if (timeLeft <= 0) timeLeft = 180;
         btn.innerText = "暫停";
         isRunning = true;
-        speak("開始刷牙，請照提示清潔分區。");
+        
+        // 隨機選取 2 則不重複笑話
+        currentJokeIndex1 = Math.floor(Math.random() * englishJokes.length);
+        do {
+          currentJokeIndex2 = Math.floor(Math.random() * englishJokes.length);
+        } while (currentJokeIndex2 === currentJokeIndex1 && englishJokes.length > 1);
+
+        // 開始時播報第 1 則笑話 (180s)
+        if (timeLeft > 90) {
+          const j1 = englishJokes[currentJokeIndex1];
+          document.getElementById('joke-q').innerText = `😂 Joke 1: ${j1.q}`;
+          document.getElementById('joke-a').innerText = `👉 ${j1.a} (${j1.zh})`;
+          tellEnglishJoke(j1);
+        }
+
         timerInterval = setInterval(() => {
           timeLeft--;
           updateTimerDisplay();
-          if (timeLeft === 135 || timeLeft === 90 || timeLeft === 45) speak("請換區域");
+
+          // 90 秒 (1分半) 播報第 2 則笑話
+          if (timeLeft === 90) {
+            const j2 = englishJokes[currentJokeIndex2];
+            document.getElementById('joke-q').innerText = `🤣 Joke 2: ${j2.q}`;
+            document.getElementById('joke-a').innerText = `👉 ${j2.a} (${j2.zh})`;
+            tellEnglishJoke(j2);
+          }
+
           if (timeLeft <= 0) {
             clearInterval(timerInterval);
             isRunning = false;
             btn.innerText = "開始計時";
-            speak("刷牙完成，請點選頭像登記打卡。");
+            document.getElementById('joke-q').innerText = "🎉 3分鐘刷牙完成！";
+            document.getElementById('joke-a').innerText = "記得點選頭像登記打卡喔！";
+            speak("太棒了，刷牙完成，請點選頭像登記打卡。");
           }
         }, 1000);
       }
@@ -440,7 +533,8 @@
       isRunning = false;
       timeLeft = 180;
       document.getElementById('btn-start').innerText = "開始計時";
-      document.getElementById('zone-guide').innerText = "準備開始刷牙";
+      document.getElementById('joke-q').innerText = "準備開始刷牙 🪥";
+      document.getElementById('joke-a').innerText = "點擊「開始計時」聽第 1 則笑話";
       updateTimerDisplay();
     }
 
@@ -473,11 +567,13 @@
         { key: 'morning_chloe', sheet: 'Chloe', el: 'morning-chloe-list', cat: '早餐備忘', mem: 'Chloe' },
         { key: 'night_timmy', sheet: 'Night_Timmy', el: 'night-timmy-list', cat: '晚間待辦', mem: 'Timmy' },
         { key: 'night_chloe', sheet: 'Night_Chloe', el: 'night-chloe-list', cat: '晚間待辦', mem: 'Chloe' },
-        { key: 'study_timmy', sheet: 'Study_Timmy', el: 'study-timmy-list', cat: '讀書計畫', mem: 'Timmy' }
+        { key: 'study_timmy', sheet: 'Study_Timmy', el: 'study-timmy-list', cat: '讀書計畫', mem: 'Timmy' },
+        { key: 'parent_notes', sheet: 'Notes', el: 'parent-notes-list', cat: '爸媽叮嚀', mem: '' }
       ];
 
       configs.forEach(cfg => {
         const el = document.getElementById(cfg.el);
+        if (!el) return;
         const items = cloudData[cfg.key] || [];
         el.innerHTML = items.length ? '' : '<li style="color: var(--text-muted); font-size:0.85rem;">目前無事項</li>';
         items.forEach(item => {
@@ -546,7 +642,7 @@
       setTimeout(fetchCloudData, 1500);
     }
 
-    // 初始啟動
+    // 啟動執行
     updateClock();
     renderBrushStatus();
     renderLists();
