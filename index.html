@@ -1,358 +1,129 @@
-<!DOCTYPE html>
-<html lang="zh-TW">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>家庭資訊展示看板</title>
-  <style>
-    :root {
-      --bg-dark: #0f172a;
-      --card-bg: #1e293b;
-      --card-border: #334155;
-      --accent-blue: #38bdf8;
-      --accent-gold: #fbbf24;
-      --accent-green: #34d399;
-      --text-main: #f8fafc;
-      --text-muted: #94a3b8;
-    }
+<style>
+  :root {
+    --bg-dark: #0f172a;
+    --card-bg: #1e293b;
+    --card-border: #334155;
+    --accent-blue: #38bdf8;
+    --accent-gold: #fbbf24;
+    --accent-green: #34d399;
+    --accent-purple: #c084fc;
+    --text-main: #f8fafc;
+    --text-muted: #94a3b8;
+  }
 
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft JhengHei", Roboto, sans-serif;
-    }
+  * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft JhengHei", Roboto, sans-serif; }
 
-    /* ========================================================
-       🖥️ 平板 / 大螢幕模式 (高度 100vh 鎖定，絕無外層捲軸)
-       ======================================================== */
+  /* ========================================================
+     🖥️ 平板 / 電腦端：鎖定 100vh 不出現外層捲軸，維持原本比例
+     ======================================================== */
+  body {
+    background-color: var(--bg-dark);
+    color: var(--text-main);
+    padding: 12px 16px;
+    height: 100vh;
+    overflow: hidden; /* 鎖定單頁不滾動 */
+    display: flex;
+    flex-direction: column;
+    user-select: none;
+  }
+
+  .header {
+    flex-shrink: 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+    border: 2px solid var(--accent-blue);
+    border-radius: 12px;
+    padding: 8px 16px;
+    margin-bottom: 10px;
+    gap: 12px;
+  }
+
+  .title-group h1 { font-size: 1.5rem; font-weight: 900; color: #ffffff; display: flex; align-items: center; gap: 8px; }
+  .badge-home { background: #0284c7; color: white; font-size: 0.8rem; padding: 2px 8px; border-radius: 6px; }
+  .sync-status { font-size: 0.8rem; color: var(--accent-green); margin-top: 4px; font-weight: bold; }
+
+  .datetime-bar { display: flex; align-items: center; gap: 12px; }
+  .date-display-large { font-size: 1.6rem; font-weight: 900; color: var(--accent-blue); }
+  .clock-large { font-size: 2rem; font-weight: 900; font-family: "Courier New", monospace; color: var(--accent-gold); }
+
+  .controls-group { display: flex; gap: 8px; }
+  .btn-top { background: #334155; color: white; border: 1px solid #475569; padding: 6px 12px; border-radius: 6px; font-size: 0.85rem; font-weight: bold; cursor: pointer; white-space: nowrap; }
+
+  /* 6 格卡片主佈局：自動填滿剩餘高度 */
+  .dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(2, 1fr);
+    gap: 10px;
+    flex: 1;
+    min-height: 0; 
+  }
+
+  .section-card {
+    background: var(--card-bg);
+    border: 2px solid var(--card-border);
+    border-radius: 12px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  .section-title {
+    font-size: 1.15rem; font-weight: 900; margin-bottom: 10px; padding-bottom: 8px;
+    border-bottom: 2px solid #334155; display: flex; justify-content: space-between; align-items: center;
+  }
+
+  /* 確保內容溢出時只在小格子內滑動 */
+  .event-list {
+    flex: 1;
+    overflow-y: auto; 
+    list-style: none; display: flex; flex-direction: column; gap: 8px;
+  }
+
+  .event-item {
+    background: #0f172a; border-radius: 8px; padding: 8px 12px;
+    display: flex; justify-content: space-between; align-items: center; border: 1px solid #334155;
+  }
+
+  .footer-routine {
+    flex-shrink: 0; margin-top: 10px; background: #1e293b; border: 1px solid #334155;
+    border-radius: 10px; padding: 8px 16px; display: flex; justify-content: space-between;
+    font-size: 0.85rem; color: var(--text-muted);
+  }
+
+  /* ========================================================
+     📱 手機端：解除高度限制，變成可往下滑動的單欄模式
+     ======================================================== */
+  @media (max-width: 768px) {
     body {
-      background-color: var(--bg-dark);
-      color: var(--text-main);
-      padding: 12px 16px;
-      height: 100vh;
-      overflow: hidden; /* 平板鎖定整頁，不產生外層捲軸 */
-      display: flex;
-      flex-direction: column;
-      user-select: none;
+      height: auto !important;
+      min-height: 100vh;
+      overflow-y: auto !important; /* 開啟整頁向下捲動 */
+      padding: 10px;
     }
 
-    /* 頂部戰情列 */
-    .header {
-      flex-shrink: 0;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
-      border: 2px solid var(--accent-blue);
-      border-radius: 12px;
-      padding: 8px 16px;
-      margin-bottom: 10px;
-      gap: 12px;
-    }
+    .header { flex-direction: column; align-items: stretch; gap: 10px; }
+    .datetime-bar { justify-content: space-between; width: 100%; }
+    .date-display-large { font-size: 1.2rem; }
+    .clock-large { font-size: 1.5rem; }
+    .controls-group { width: 100%; justify-content: space-between; }
+    .btn-top { flex: 1; text-align: center; padding: 6px 4px; font-size: 0.75rem; }
 
-    .title-group h1 {
-      font-size: 1.3rem;
-      font-weight: 900;
-      color: #ffffff;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      white-space: nowrap;
-    }
-
-    .sync-status {
-      font-size: 0.75rem;
-      color: var(--accent-green);
-      margin-top: 2px;
-      font-weight: bold;
-    }
-
-    /* 日期與時鐘並排 */
-    .datetime-bar {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      white-space: nowrap;
-    }
-
-    .date-display-large {
-      font-size: 1.6rem;
-      font-weight: 900;
-      color: var(--accent-blue);
-      line-height: 1;
-    }
-
-    .clock-large {
-      font-size: 1.9rem;
-      font-weight: 900;
-      font-family: "Courier New", monospace, sans-serif;
-      color: var(--accent-gold);
-      line-height: 1;
-    }
-
-    .controls-group {
-      display: flex;
-      gap: 6px;
-      flex-shrink: 0;
-    }
-
-    .btn-top {
-      background: #334155;
-      color: white;
-      border: 1px solid #475569;
-      padding: 5px 10px;
-      border-radius: 6px;
-      font-size: 0.8rem;
-      font-weight: bold;
-      cursor: pointer;
-      white-space: nowrap;
-    }
-    .btn-top:hover { background: #475569; }
-
-    /* 6格卡片主佈局：電腦/平板自動填滿剩餘高度 (3 欄 x 2 列) */
+    /* 解除 3x2 網格，改為 1 欄往下滑 */
     .dashboard-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      grid-template-rows: repeat(2, 1fr);
-      gap: 10px;
-      flex: 1;
-      min-height: 0; /* 確保 Grid 內部高度計算不溢出 */
+      grid-template-columns: 1fr !important;
+      grid-template-rows: auto !important;
+      gap: 12px;
+      height: auto !important;
     }
 
-    /* 卡片通用樣式 */
-    .card {
-      background: var(--card-bg);
-      border: 1.5px solid var(--card-border);
-      border-radius: 12px;
-      padding: 12px;
-      display: flex;
-      flex-direction: column;
-      min-height: 0;
-    }
-
-    .card-header {
-      font-size: 1.05rem;
-      font-weight: bold;
-      margin-bottom: 8px;
-      padding-bottom: 6px;
-      border-bottom: 1.5px solid #334155;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-shrink: 0;
-    }
-
-    .card-body {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      overflow-y: auto; /* 平板上若單格內容超出版面，僅在該格內滾動 */
-      font-size: 0.9rem;
-      line-height: 1.4;
-    }
-
-    /* 底部作息狀態條 */
-    .footer-routine {
-      flex-shrink: 0;
-      margin-top: 8px;
-      background: #1e293b;
-      border: 1px solid #334155;
-      border-radius: 8px;
-      padding: 6px 14px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      font-size: 0.8rem;
-      color: var(--text-muted);
-    }
-
-    /* ========================================================
-       📱 手機模式 (螢幕寬度 <= 768px 或直立手機)
-       解除 100vh 鎖定，自動換行並允許整頁自然上下滾動
-       ======================================================== */
-    @media (max-width: 768px) {
-      body {
-        height: auto !important; /* 解除全螢幕高度鎖定 */
-        min-height: 100vh;
-        overflow-y: auto !important; /* 開啟手機上下滑動捲軸 */
-        padding: 10px;
-      }
-
-      .header {
-        flex-direction: column;
-        align-items: stretch;
-        gap: 10px;
-        padding: 10px;
-      }
-
-      .datetime-bar {
-        justify-content: space-between;
-        width: 100%;
-      }
-
-      .date-display-large {
-        font-size: 1.2rem;
-      }
-
-      .clock-large {
-        font-size: 1.5rem;
-      }
-
-      .controls-group {
-        width: 100%;
-        justify-content: space-between;
-      }
-
-      .btn-top {
-        flex: 1;
-        text-align: center;
-        padding: 6px 4px;
-        font-size: 0.75rem;
-      }
-
-      /* 6 個小格在手機上一律變成「單欄滿版」，高度自適應延伸 */
-      .dashboard-grid {
-        grid-template-columns: 1fr !important;
-        grid-template-rows: auto !important;
-        gap: 12px;
-        height: auto !important;
-      }
-
-      .card {
-        min-height: auto;
-        height: auto;
-        padding: 12px;
-      }
-
-      .card-body {
-        overflow-y: visible; /* 手機直接撐開內容，讓整個頁面自然上下滑 */
-      }
-
-      .footer-routine {
-        flex-direction: column;
-        gap: 4px;
-        text-align: center;
-        margin-top: 12px;
-      }
-    }
-  </style>
-</head>
-<body>
-
-  <!-- 頂部資訊與控制列 -->
-  <div class="header">
-    <div class="title-group">
-      <h1>🏡 家庭智慧看板</h1>
-      <div id="sync-status" class="sync-status">🟢 系統運作中</div>
-    </div>
-
-    <!-- 即時日期與時鐘 -->
-    <div class="datetime-bar">
-      <div id="date-display" class="date-display-large">0000年00月00日 星期日</div>
-      <div id="clock" class="clock-large">00:00:00</div>
-    </div>
-
-    <div class="controls-group">
-      <button class="btn-top" onclick="location.reload()">🔄 重新整理</button>
-      <button class="btn-top" onclick="toggleFullScreen()">⛶ 全螢幕</button>
-    </div>
-  </div>
-
-  <!-- 6 格卡片主區域 -->
-  <div class="dashboard-grid">
-
-    <!-- 第 1 格 -->
-    <div class="card">
-      <div class="card-header">
-        <span>第 1 格標題</span>
-      </div>
-      <div class="card-body" id="card-1-content">
-        <!-- 放置第 1 格內容 -->
-      </div>
-    </div>
-
-    <!-- 第 2 格 -->
-    <div class="card">
-      <div class="card-header">
-        <span>第 2 格標題</span>
-      </div>
-      <div class="card-body" id="card-2-content">
-        <!-- 放置第 2 格內容 -->
-      </div>
-    </div>
-
-    <!-- 第 3 格 -->
-    <div class="card">
-      <div class="card-header">
-        <span>第 3 格標題</span>
-      </div>
-      <div class="card-body" id="card-3-content">
-        <!-- 放置第 3 格內容 -->
-      </div>
-    </div>
-
-    <!-- 第 4 格 -->
-    <div class="card">
-      <div class="card-header">
-        <span>第 4 格標題</span>
-      </div>
-      <div class="card-body" id="card-4-content">
-        <!-- 放置第 4 格內容 -->
-      </div>
-    </div>
-
-    <!-- 第 5 格 -->
-    <div class="card">
-      <div class="card-header">
-        <span>第 5 格標題</span>
-      </div>
-      <div class="card-body" id="card-5-content">
-        <!-- 放置第 5 格內容 -->
-      </div>
-    </div>
-
-    <!-- 第 6 格 -->
-    <div class="card">
-      <div class="card-header">
-        <span>第 6 格標題</span>
-      </div>
-      <div class="card-body" id="card-6-content">
-        <!-- 放置第 6 格內容 -->
-      </div>
-    </div>
-
-  </div>
-
-  <!-- 底部作息狀態列 -->
-  <div class="footer-routine">
-    <span>💡 平板/大螢幕一頁填滿展示，手機自動轉為單欄滾動模式</span>
-    <span>⚡ 系統即時運作中</span>
-  </div>
-
-  <script>
-    function toggleFullScreen() {
-      if (!document.fullscreenElement) {
-        document.documentElement.requestFullscreen().catch(() => {});
-      } else {
-        document.exitFullscreen();
-      }
-    }
-
-    function updateClock() {
-      const now = new Date();
-      const h = String(now.getHours()).padStart(2, '0');
-      const m = String(now.getMinutes()).padStart(2, '0');
-      const s = String(now.getSeconds()).padStart(2, '0');
-      const dayNames = ['星期日','星期一','星期二','星期三','星期四','星期五','星期六'];
-      
-      document.getElementById('clock').innerText = `${h}:${m}:${s}`;
-      document.getElementById('date-display').innerText = `${now.getFullYear()}年${now.getMonth()+1}月${now.getDate()}日 ${dayNames[now.getDay()]}`;
-    }
-
-    updateClock();
-    setInterval(updateClock, 1000);
-  </script>
-</body>
-</html>
+    .section-card { min-height: auto; height: auto; }
+    
+    /* 解除小格子內部捲動，讓內容自然撐開以便整頁滑動 */
+    .event-list { overflow-y: visible; }
+    .footer-routine { flex-direction: column; gap: 6px; text-align: center; }
+  }
+</style>
