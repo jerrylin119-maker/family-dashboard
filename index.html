@@ -1,129 +1,761 @@
-<style>
-  :root {
-    --bg-dark: #0f172a;
-    --card-bg: #1e293b;
-    --card-border: #334155;
-    --accent-blue: #38bdf8;
-    --accent-gold: #fbbf24;
-    --accent-green: #34d399;
-    --accent-purple: #c084fc;
-    --text-main: #f8fafc;
-    --text-muted: #94a3b8;
-  }
-
-  * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft JhengHei", Roboto, sans-serif; }
-
-  /* ========================================================
-     🖥️ 平板 / 電腦端：鎖定 100vh 不出現外層捲軸，維持原本比例
-     ======================================================== */
-  body {
-    background-color: var(--bg-dark);
-    color: var(--text-main);
-    padding: 12px 16px;
-    height: 100vh;
-    overflow: hidden; /* 鎖定單頁不滾動 */
-    display: flex;
-    flex-direction: column;
-    user-select: none;
-  }
-
-  .header {
-    flex-shrink: 0;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
-    border: 2px solid var(--accent-blue);
-    border-radius: 12px;
-    padding: 8px 16px;
-    margin-bottom: 10px;
-    gap: 12px;
-  }
-
-  .title-group h1 { font-size: 1.5rem; font-weight: 900; color: #ffffff; display: flex; align-items: center; gap: 8px; }
-  .badge-home { background: #0284c7; color: white; font-size: 0.8rem; padding: 2px 8px; border-radius: 6px; }
-  .sync-status { font-size: 0.8rem; color: var(--accent-green); margin-top: 4px; font-weight: bold; }
-
-  .datetime-bar { display: flex; align-items: center; gap: 12px; }
-  .date-display-large { font-size: 1.6rem; font-weight: 900; color: var(--accent-blue); }
-  .clock-large { font-size: 2rem; font-weight: 900; font-family: "Courier New", monospace; color: var(--accent-gold); }
-
-  .controls-group { display: flex; gap: 8px; }
-  .btn-top { background: #334155; color: white; border: 1px solid #475569; padding: 6px 12px; border-radius: 6px; font-size: 0.85rem; font-weight: bold; cursor: pointer; white-space: nowrap; }
-
-  /* 6 格卡片主佈局：自動填滿剩餘高度 */
-  .dashboard-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    grid-template-rows: repeat(2, 1fr);
-    gap: 10px;
-    flex: 1;
-    min-height: 0; 
-  }
-
-  .section-card {
-    background: var(--card-bg);
-    border: 2px solid var(--card-border);
-    border-radius: 12px;
-    padding: 16px;
-    display: flex;
-    flex-direction: column;
-    min-height: 0;
-  }
-
-  .section-title {
-    font-size: 1.15rem; font-weight: 900; margin-bottom: 10px; padding-bottom: 8px;
-    border-bottom: 2px solid #334155; display: flex; justify-content: space-between; align-items: center;
-  }
-
-  /* 確保內容溢出時只在小格子內滑動 */
-  .event-list {
-    flex: 1;
-    overflow-y: auto; 
-    list-style: none; display: flex; flex-direction: column; gap: 8px;
-  }
-
-  .event-item {
-    background: #0f172a; border-radius: 8px; padding: 8px 12px;
-    display: flex; justify-content: space-between; align-items: center; border: 1px solid #334155;
-  }
-
-  .footer-routine {
-    flex-shrink: 0; margin-top: 10px; background: #1e293b; border: 1px solid #334155;
-    border-radius: 10px; padding: 8px 16px; display: flex; justify-content: space-between;
-    font-size: 0.85rem; color: var(--text-muted);
-  }
-
-  /* ========================================================
-     📱 手機端：解除高度限制，變成可往下滑動的單欄模式
-     ======================================================== */
-  @media (max-width: 768px) {
-    body {
-      height: auto !important;
-      min-height: 100vh;
-      overflow-y: auto !important; /* 開啟整頁向下捲動 */
-      padding: 10px;
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>家庭日常提醒看板 (iPad mini 專用版)</title>
+  <style>
+    :root {
+      --bg-color: #f0f4f8;
+      --card-bg: #ffffff;
+      --primary: #3b82f6;
+      --accent: #10b981;
+      --timmy: #0284c7;
+      --chloe: #db2777;
+      --study: #8b5cf6;
+      --parent: #ea580c;
+      --text: #1f2937;
+      --text-muted: #6b7280;
     }
-
-    .header { flex-direction: column; align-items: stretch; gap: 10px; }
-    .datetime-bar { justify-content: space-between; width: 100%; }
-    .date-display-large { font-size: 1.2rem; }
-    .clock-large { font-size: 1.5rem; }
-    .controls-group { width: 100%; justify-content: space-between; }
-    .btn-top { flex: 1; text-align: center; padding: 6px 4px; font-size: 0.75rem; }
-
-    /* 解除 3x2 網格，改為 1 欄往下滑 */
-    .dashboard-grid {
-      grid-template-columns: 1fr !important;
-      grid-template-rows: auto !important;
-      gap: 12px;
-      height: auto !important;
-    }
-
-    .section-card { min-height: auto; height: auto; }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
     
-    /* 解除小格子內部捲動，讓內容自然撐開以便整頁滑動 */
-    .event-list { overflow-y: visible; }
-    .footer-routine { flex-direction: column; gap: 6px; text-align: center; }
-  }
-</style>
+    /* 針對 iPad mini 緊湊化滿版佈局 */
+    html, body {
+      height: 100vh;
+      overflow: hidden;
+    }
+    body {
+      background: var(--bg-color);
+      color: var(--text);
+      padding: 10px 14px;
+      display: flex;
+      flex-direction: column;
+      user-select: none;
+    }
+    
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+      flex-shrink: 0;
+    }
+    .clock { font-size: 1.6rem; font-weight: 800; color: var(--primary); }
+    .sync-status { font-size: 0.75rem; color: var(--accent); font-weight: bold; }
+    
+    /* 完美 6 宮格：3 欄 x 2 列 填滿螢幕 */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      grid-template-rows: repeat(2, 1fr);
+      gap: 10px;
+      flex: 1;
+      min-height: 0;
+    }
+
+    .card {
+      background: var(--card-bg);
+      border-radius: 12px;
+      padding: 10px 12px;
+      box-shadow: 0 3px 6px -1px rgba(0,0,0,0.05);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      min-height: 0;
+      overflow: hidden;
+    }
+    .card h2 {
+      font-size: 0.95rem;
+      font-weight: 800;
+      margin-bottom: 6px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-shrink: 0;
+    }
+    
+    /* 刷牙計時與英文笑話 */
+    .timer-display {
+      font-size: 2.2rem;
+      font-weight: 800;
+      text-align: center;
+      color: var(--primary);
+      line-height: 1;
+      margin: 2px 0;
+    }
+    .joke-box {
+      background: #f8fafc;
+      border: 1px dashed #cbd5e1;
+      border-radius: 8px;
+      padding: 4px 6px;
+      margin: 4px 0;
+      text-align: center;
+      font-size: 0.75rem;
+      min-height: 40px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+    .joke-q { font-weight: bold; color: #1e293b; }
+    .joke-a { color: #d97706; font-weight: 600; margin-top: 2px; }
+
+    .controls { display: flex; gap: 6px; justify-content: center; margin-bottom: 4px; }
+    button {
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    button:active { transform: scale(0.98); }
+    button.btn-reset { background: var(--text-muted); }
+    
+    .member-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; }
+    .member-btn {
+      background: #e5e7eb;
+      color: var(--text);
+      border-radius: 6px;
+      padding: 4px 1px;
+      text-align: center;
+      cursor: pointer;
+      border: 1.5px solid transparent;
+      font-size: 0.75rem;
+    }
+    .member-btn.done-morning { border-color: #f59e0b; background: #fef3c7; }
+    .member-btn.done-night { border-color: #10b981; background: #d1fae5; }
+    .member-btn.done-all { border-color: #10b981; background: #a7f3d0; font-weight: bold; }
+    .member-btn span { display: block; font-size: 0.65rem; color: var(--text-muted); }
+
+    /* 清單滾動容器 */
+    ul { list-style: none; overflow-y: auto; flex: 1; min-height: 0; }
+    li { display: flex; align-items: center; gap: 6px; padding: 3px 0; border-bottom: 1px solid #f3f4f6; }
+    li.completed { text-decoration: line-through; color: var(--text-muted); }
+    input[type="checkbox"] { width: 16px; height: 16px; cursor: pointer; flex-shrink: 0; }
+    
+    .input-group { display: flex; gap: 4px; margin-top: 4px; flex-shrink: 0; }
+    .input-group input { flex: 1; padding: 4px 6px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.75rem; }
+    .input-group button { padding: 4px 8px; font-size: 0.75rem; }
+    
+    .sub-section { margin-bottom: 4px; border-left: 3px solid var(--primary); padding-left: 6px; }
+    .sub-section.timmy { border-color: var(--timmy); }
+    .sub-section.chloe { border-color: var(--chloe); }
+    .sub-section.study { border-color: var(--study); }
+    .sub-section.parent { border-color: var(--parent); }
+
+    .badge { padding: 1px 4px; border-radius: 4px; font-size: 0.65rem; background: #e5e7eb; }
+    .chore-highlight { font-size: 1rem; font-weight: bold; color: #ec4899; text-align: center; margin: 2px 0; }
+    .chore-action-box { text-align: center; margin: 4px 0; }
+    .btn-chore-done { background: #10b981; color: white; padding: 4px 12px; font-size: 0.8rem; border-radius: 6px; cursor: pointer; }
+    .btn-chore-done.completed { background: #d1fae5; color: #065f46; border: 1.5px solid #10b981; cursor: default; }
+
+    dialog { border: none; border-radius: 12px; padding: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); width: 90%; max-width: 400px; margin: auto; }
+    dialog::backdrop { background: rgba(0,0,0,0.4); }
+    .edit-row { display: flex; gap: 6px; margin-bottom: 6px; align-items: center; font-size: 0.85rem; }
+    .edit-row span { width: 40px; font-weight: bold; }
+    .edit-row input { padding: 3px 6px; border: 1px solid #ccc; border-radius: 4px; }
+
+    /* ========================================================
+       📱 手機模式：僅在此區塊解除鎖定，允許往下滾動，不影響平板
+       ======================================================== */
+    @media (max-width: 768px) {
+      html, body {
+        height: auto !important;
+        min-height: 100vh;
+        overflow-y: auto !important; /* 開啟手機向下滾動 */
+      }
+      .header {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .header > div {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8px;
+      }
+      .grid {
+        grid-template-columns: 1fr !important; /* 改為單欄 */
+        grid-template-rows: auto !important;
+        height: auto !important;
+      }
+      .card {
+        min-height: auto !important;
+        height: auto !important;
+        overflow: visible !important; /* 解除內部卡片高度限制 */
+      }
+      ul {
+        overflow-y: visible !important; /* 解除清單內部滾動，直接撐開 */
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <div>
+      <h1 style="font-size: 1.15rem; font-weight: 800;">🏠 家庭日常提醒看板</h1>
+      <div id="date-display" style="color: var(--text-muted); font-size: 0.75rem;"></div>
+      <div id="sync-status" class="sync-status">☁️ 雲端狀態檢查中...</div>
+    </div>
+    <div style="text-align: right;">
+      <div id="clock" class="clock">00:00:00</div>
+      <button onclick="fetchCloudData()" style="background: #e5e7eb; color: var(--text); padding: 2px 6px; font-size: 0.7rem; border-radius: 4px;">🔄 整理</button>
+      <button onclick="testSpeech()" style="background: #e5e7eb; color: var(--text); padding: 2px 6px; font-size: 0.7rem; border-radius: 4px;">🔊 語音</button>
+    </div>
+  </div>
+
+  <!-- 6 宮格主要佈局 -->
+  <div class="grid">
+    
+    <!-- 格子 1：刷牙計時與英文笑話 -->
+    <div class="card">
+      <div>
+        <h2>🪥 刷牙計時 (聽英文笑話)</h2>
+        <div id="timer" class="timer-display">03:00</div>
+        <div class="joke-box" id="joke-container">
+          <div class="joke-q" id="joke-q">準備開始刷牙 🪥</div>
+          <div class="joke-a" id="joke-a">點「開始計時」聽笑話</div>
+        </div>
+        <div class="controls">
+          <button id="btn-start" onclick="toggleTimer()">開始計時</button>
+          <button class="btn-reset" onclick="resetTimer()">重設</button>
+        </div>
+      </div>
+      <div>
+        <div class="member-grid">
+          <div class="member-btn" id="m-father" onclick="handleBrushCheck('爸爸')"><div>👨 爸爸</div><span id="st-father">未打卡</span></div>
+          <div class="member-btn" id="m-mother" onclick="handleBrushCheck('媽媽')"><div>👩 媽媽</div><span id="st-mother">未打卡</span></div>
+          <div class="member-btn" id="m-timmy" onclick="handleBrushCheck('Timmy')"><div>👦 Timmy</div><span id="st-timmy">未打卡</span></div>
+          <div class="member-btn" id="m-chloe" onclick="handleBrushCheck('Chloe')"><div>👧 Chloe</div><span id="st-chloe">未打卡</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 格子 2：Timmy 讀書計畫 -->
+    <div class="card">
+      <h2>📚 Timmy 讀書計畫</h2>
+      <div class="sub-section study" style="flex:1; display:flex; flex-direction:column; min-height:0;">
+        <ul id="study-timmy-list"></ul>
+      </div>
+      <div class="input-group">
+        <input type="text" id="study-timmy-input" placeholder="新增進度 (例: 英文第3課)...">
+        <button style="background: var(--study);" onclick="handleAddTask('Study_Timmy', 'study-timmy-input')">新增</button>
+      </div>
+    </div>
+
+    <!-- 格子 3：早餐備忘清單 -->
+    <div class="card">
+      <h2>🍳 早餐備忘清單</h2>
+      <div style="flex:1; display:flex; flex-direction:column; min-height:0; overflow-y:auto;">
+        <div class="sub-section timmy">
+          <b style="color: var(--timmy); font-size: 0.75rem;">👦 Timmy 晨間備忘</b>
+          <ul id="morning-timmy-list"></ul>
+          <div class="input-group"><input type="text" id="morning-timmy-input" placeholder="新增..."><button style="background: var(--timmy);" onclick="handleAddTask('Timmy', 'morning-timmy-input')">+</button></div>
+        </div>
+        <div class="sub-section chloe">
+          <b style="color: var(--chloe); font-size: 0.75rem;">👧 Chloe 晨間備忘</b>
+          <ul id="morning-chloe-list"></ul>
+          <div class="input-group"><input type="text" id="morning-chloe-input" placeholder="新增..."><button style="background: var(--chloe);" onclick="handleAddTask('Chloe', 'morning-chloe-input')">+</button></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 格子 4：晚餐後待辦事項 -->
+    <div class="card">
+      <h2>🍽️ 晚餐後應完成事項</h2>
+      <div style="flex:1; display:flex; flex-direction:column; min-height:0; overflow-y:auto;">
+        <div class="sub-section timmy">
+          <b style="color: var(--timmy); font-size: 0.75rem;">👦 Timmy 晚間待辦</b>
+          <ul id="night-timmy-list"></ul>
+          <div class="input-group"><input type="text" id="night-timmy-input" placeholder="新增..."><button style="background: var(--timmy);" onclick="handleAddTask('Night_Timmy', 'night-timmy-input')">+</button></div>
+        </div>
+        <div class="sub-section chloe">
+          <b style="color: var(--chloe); font-size: 0.75rem;">👧 Chloe 晚間待辦</b>
+          <ul id="night-chloe-list"></ul>
+          <div class="input-group"><input type="text" id="night-chloe-input" placeholder="新增..."><button style="background: var(--chloe);" onclick="handleAddTask('Night_Chloe', 'night-chloe-input')">+</button></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 格子 5：今日輪值家事 -->
+    <div class="card">
+      <h2>
+        <span>🧹 今日輪值家事</span>
+        <button style="background: transparent; color: var(--primary); font-size: 0.7rem; padding: 0;" onclick="openChoreModal()">⚙️ 設定</button>
+      </h2>
+      <div id="chore-display" class="chore-highlight">載入中...</div>
+      <div class="chore-action-box">
+        <button id="btn-chore-done" class="btn-chore-done" onclick="handleChoreCheck()">✨ 完成今日家事</button>
+      </div>
+      <ul id="chore-schedule" style="font-size: 0.75rem; color: var(--text-muted);"></ul>
+    </div>
+
+    <!-- 格子 6：💌 爸媽的叮嚀 -->
+    <div class="card">
+      <h2 style="color: var(--parent);">💌 爸媽的叮嚀與鼓勵</h2>
+      <div class="sub-section parent" style="flex:1; display:flex; flex-direction:column; min-height:0;">
+        <ul id="parent-notes-list"></ul>
+      </div>
+      <div class="input-group">
+        <input type="text" id="parent-notes-input" placeholder="寫下叮嚀或鼓勵...">
+        <button style="background: var(--parent);" onclick="handleAddTask('Notes', 'parent-notes-input')">新增</button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- 家事自訂彈窗 -->
+  <dialog id="chore-modal">
+    <h3 style="margin-bottom: 8px; font-size: 1rem;">設定每週家事輪值內容</h3>
+    <div id="chore-edit-list"></div>
+    <div style="display: flex; justify-content: flex-end; gap: 6px; margin-top: 10px;">
+      <button class="btn-reset" onclick="document.getElementById('chore-modal').close()">取消</button>
+      <button onclick="saveChores()">儲存更換</button>
+    </div>
+  </dialog>
+
+  <script>
+    const API_URL = "https://script.google.com/macros/s/AKfycby0wGYcXHbGfaG8UEI7qt4eqVvYEX2E95hQFC4qNWMNa_dPeMr5v2zMGO__P6o7WSM74g/exec";
+
+    const members = ['爸爸', '媽媽', 'Timmy', 'Chloe'];
+    const memberIdMap = { '爸爸': 'father', '媽媽': 'mother', 'Timmy': 'timmy', 'Chloe': 'chloe' };
+    
+    const englishJokes = [
+      { q: "Why do we tell actors to 'break a leg'?", a: "Because every play has a cast!", zh: "為什麼祝演員好運要說斷條腿？因為每齣劇都有演員名單(cast也有石膏的意思)！" },
+      { q: "Why did the math book look sad?", a: "Because it had too many problems!", zh: "為什麼數學書看起來很難過？因為它有太多問題(題目)了！" },
+      { q: "Why can't a leopard hide?", a: "Because he is always spotted!", zh: "為什麼花豹藏不住？因為牠全身都是斑點(spotted也有被發現的意思)！" },
+      { q: "What is orange and sounds like a parrot?", a: "A carrot!", zh: "什麼東西是橘色的而且聽起來像鸚鵡(parrot)？是紅蘿蔔(carrot)！" },
+      { q: "What do you call a fake noodle?", a: "An impasta!", zh: "你怎麼稱呼假的義大利麵？冒牌貨(impasta 諧音 imposter)！" },
+      { q: "Why did the teddy bear say no to dessert?", a: "Because she was already stuffed!", zh: "為什麼泰迪熊不吃甜點？因為牠已經很飽了(stuffed也是填充玩具的意思)！" },
+      { q: "What do you call a sleeping dinosaur?", a: "A dino-snore!", zh: "你怎麼稱呼睡覺的恐龍？打呼龍(snore)！" }
+    ];
+
+    const defaultChores = [
+      { day: '週日', person: '爸爸', chore: '大掃除清貓砂' },
+      { day: '週一', person: 'TIMMY', chore: '清貓砂' },
+      { day: '週二', person: 'CHLOE', chore: '清貓砂(含白桶)' },
+      { day: '週三', person: 'TIMMY', chore: '清貓砂' },
+      { day: '週四', person: 'CHLOE', chore: '清貓砂' },
+      { day: '週五', person: 'TIMMY', chore: '清貓砂(含白桶)' },
+      { day: '週六', person: 'CHLOE', chore: '清貓砂' }
+    ];
+
+    let cloudData = {
+      morning_timmy: [], morning_chloe: [],
+      night_timmy: [], night_chloe: [],
+      study_timmy: [],
+      parent_notes: [{ id: 1, text: '每天保持好心情，多喝水！', done: false }],
+      chores: defaultChores,
+      chore_today_done: { done: false, time: '' },
+      brush: { "爸爸": {}, "媽媽": {}, "Timmy": {}, "Chloe": {} }
+    };
+
+    const sheetToKeyMap = {
+      'Timmy': 'morning_timmy',
+      'Chloe': 'morning_chloe',
+      'Night_Timmy': 'night_timmy',
+      'Night_Chloe': 'night_chloe',
+      'Study_Timmy': 'study_timmy',
+      'Notes': 'parent_notes'
+    };
+
+    let timerInterval = null;
+    let timeLeft = 180;
+    let isRunning = false;
+    let currentJokeIndex1 = 0;
+    let currentJokeIndex2 = 1;
+    let triggeredToday = {};
+    let cachedVoices = [];
+
+    // ✨ 語音引擎初始化（優先抓取 Apple/微軟 高品質真人發音）
+    function initVoices() {
+      if ('speechSynthesis' in window) {
+        cachedVoices = window.speechSynthesis.getVoices();
+      }
+    }
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.onvoiceschanged = initVoices;
+      initVoices();
+    }
+
+    function speak(text, lang = 'zh-TW') {
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = lang;
+        
+        if (cachedVoices.length === 0) initVoices();
+        
+        // 挑選最佳發音人
+        if (lang === 'zh-TW') {
+          const v = cachedVoices.find(i => 
+            (i.lang === 'zh-TW' || i.lang === 'cmn-Hant-TW') && 
+            (i.name.includes('Meijia') || i.name.includes('美佳') || i.name.includes('Hsiao') || i.name.includes('Natural') || i.name.includes('Google'))
+          ) || cachedVoices.find(i => i.lang.includes('zh'));
+          if (v) utterance.voice = v;
+          utterance.rate = 0.95;
+        } else if (lang === 'en-US') {
+          const v = cachedVoices.find(i => 
+            i.lang.includes('en') && (i.name.includes('Samantha') || i.name.includes('Natural') || i.name.includes('Google') || i.name.includes('Ava'))
+          );
+          if (v) utterance.voice = v;
+          utterance.rate = 0.9;
+        }
+
+        window.speechSynthesis.speak(utterance);
+      }
+    }
+
+    function tellEnglishJoke(joke) {
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        const u1 = new SpeechSynthesisUtterance(joke.q);
+        u1.lang = 'en-US';
+        u1.rate = 0.9;
+        
+        if (cachedVoices.length === 0) initVoices();
+        const ev = cachedVoices.find(i => i.lang.includes('en') && (i.name.includes('Samantha') || i.name.includes('Natural') || i.name.includes('Google')));
+        if (ev) u1.voice = ev;
+
+        u1.onend = () => {
+          setTimeout(() => {
+            const u2 = new SpeechSynthesisUtterance(joke.a);
+            u2.lang = 'en-US';
+            u2.rate = 0.9;
+            if (ev) u2.voice = ev;
+            window.speechSynthesis.speak(u2);
+          }, 700);
+        };
+        window.speechSynthesis.speak(u1);
+      }
+    }
+
+    function testSpeech() {
+      speak("語音升級完成，現在為您測試英文笑話：");
+      setTimeout(() => {
+        tellEnglishJoke(englishJokes[0]);
+      }, 1600);
+    }
+
+    async function handleAddTask(sheetName, inputId) {
+      const input = document.getElementById(inputId);
+      const text = input.value.trim();
+      if (!text) return;
+      input.value = '';
+
+      const dataKey = sheetToKeyMap[sheetName];
+      if (!cloudData[dataKey]) cloudData[dataKey] = [];
+      cloudData[dataKey].push({ id: Date.now(), text: text, done: false });
+      renderLists();
+
+      await postToCloud({ action: 'add_task', sheetName: sheetName, text: text });
+      setTimeout(fetchCloudData, 2000);
+    }
+
+    async function handleToggleTask(sheetName, rowId, currentDone, dataKey, category, member) {
+      const newDone = !currentDone;
+      const item = cloudData[dataKey].find(i => i.id === rowId);
+      if (item) item.done = newDone;
+      renderLists();
+
+      if (newDone && item && member) {
+        speak(`${member}已完成：${item.text}`);
+      }
+
+      await postToCloud({
+        action: 'toggle_task',
+        sheetName: sheetName,
+        rowId: rowId,
+        done: newDone,
+        category: category,
+        member: member,
+        text: item ? item.text : ''
+      });
+    }
+
+    async function handleBrushCheck(name) {
+      const currentHour = new Date().getHours();
+      const session = currentHour < 14 ? 'morning' : 'night';
+      
+      if (!cloudData.brush[name]) cloudData.brush[name] = {};
+      cloudData.brush[name][session] = true;
+      renderBrushStatus();
+      
+      speak(`${name}${session === 'morning' ? '早上' : '晚上'}刷牙打卡成功`);
+      await postToCloud({ action: 'brush_check', member: name, session: session });
+    }
+
+    async function handleChoreCheck() {
+      if (cloudData.chore_today_done && cloudData.chore_today_done.done) return;
+      
+      const now = new Date();
+      const timeStr = now.toTimeString().split(' ')[0].substring(0, 5);
+      const chores = cloudData.chores || defaultChores;
+      const todayChore = chores[now.getDay()] || defaultChores[now.getDay()];
+
+      cloudData.chore_today_done = { done: true, time: timeStr };
+      renderChores();
+      
+      speak(`太棒了！今日${todayChore.person}的家事已完成打卡！`);
+      
+      await postToCloud({
+        action: 'chore_check',
+        day: todayChore.day,
+        person: todayChore.person,
+        chore: todayChore.chore
+      });
+    }
+
+    window.handleCloudResponse = function(data) {
+      cloudData.morning_timmy = data.morning_timmy || [];
+      cloudData.morning_chloe = data.morning_chloe || [];
+      cloudData.night_timmy = data.night_timmy || [];
+      cloudData.night_chloe = data.night_chloe || [];
+      cloudData.study_timmy = data.study_timmy || [];
+      cloudData.parent_notes = data.parent_notes && data.parent_notes.length ? data.parent_notes : cloudData.parent_notes;
+      cloudData.brush = data.brush || {};
+      cloudData.chore_today_done = data.chore_today_done || { done: false, time: '' };
+      
+      if (data.chores && data.chores.length === 7) {
+        cloudData.chores = data.chores;
+      }
+      
+      document.getElementById('sync-status').innerText = "✅ 雲端已同步 (" + new Date().toLocaleTimeString().substring(0,5) + ")";
+      renderBrushStatus();
+      renderLists();
+      renderChores();
+    };
+
+    function fetchCloudData() {
+      if (!API_URL || API_URL.includes("YOUR_GAS_API_URL_HERE")) return;
+      document.getElementById('sync-status').innerText = "☁️ 同步中...";
+      
+      const oldScript = document.getElementById('jsonp-script');
+      if (oldScript) oldScript.remove();
+
+      const script = document.createElement('script');
+      script.id = 'jsonp-script';
+      script.src = `${API_URL}?callback=handleCloudResponse&_t=${Date.now()}`;
+      script.onerror = function() {
+        document.getElementById('sync-status').innerText = "❌ 連線逾時，使用暫存資料";
+      };
+      document.body.appendChild(script);
+    }
+
+    async function postToCloud(payload) {
+      if (!API_URL || API_URL.includes("YOUR_GAS_API_URL_HERE")) return;
+      try {
+        await fetch(API_URL, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify(payload)
+        });
+      } catch (e) {}
+    }
+
+    function updateClock() {
+      const now = new Date();
+      const timeStr = now.toTimeString().split(' ')[0];
+      const hmStr = timeStr.substring(0, 5);
+      const dateStr = `${now.getFullYear()}年${now.getMonth()+1}月${now.getDate()}日 星期${['日','一','二','三','四','五','六'][now.getDay()]}`;
+      
+      document.getElementById('clock').innerText = timeStr;
+      document.getElementById('date-display').innerText = dateStr;
+
+      if (now.getSeconds() === 0 && now.getMinutes() % 2 === 0) fetchCloudData();
+
+      if (hmStr === "07:00" && !triggeredToday["07:00"]) {
+        speak("早安！現在是早上刷牙與早餐時間。");
+        triggeredToday["07:00"] = true;
+      }
+      if (hmStr === "19:30" && !triggeredToday["19:30"]) {
+        speak("晚餐時間到了！請確認今日晚間應完成事項。");
+        triggeredToday["19:30"] = true;
+      }
+      if (hmStr === "21:00" && !triggeredToday["21:00"]) {
+        const chores = cloudData.chores || defaultChores;
+        const chore = chores[now.getDay()];
+        speak(`睡前時間到了，今日輪值由${chore.person}負責${chore.chore}，請大家完成睡前刷牙打卡！`);
+        triggeredToday["21:00"] = true;
+      }
+    }
+    setInterval(updateClock, 1000);
+
+    function updateTimerDisplay() {
+      const m = Math.floor(timeLeft / 60).toString().padStart(2, '0');
+      const s = (timeLeft % 60).toString().padStart(2, '0');
+      document.getElementById('timer').innerText = `${m}:${s}`;
+    }
+
+    function toggleTimer() {
+      const btn = document.getElementById('btn-start');
+      if (isRunning) {
+        clearInterval(timerInterval);
+        btn.innerText = "繼續計時";
+        isRunning = false;
+      } else {
+        if (timeLeft <= 0) timeLeft = 180;
+        btn.innerText = "暫停";
+        isRunning = true;
+        
+        currentJokeIndex1 = Math.floor(Math.random() * englishJokes.length);
+        do {
+          currentJokeIndex2 = Math.floor(Math.random() * englishJokes.length);
+        } while (currentJokeIndex2 === currentJokeIndex1 && englishJokes.length > 1);
+
+        if (timeLeft > 90) {
+          const j1 = englishJokes[currentJokeIndex1];
+          document.getElementById('joke-q').innerText = `😂 Joke 1: ${j1.q}`;
+          document.getElementById('joke-a').innerText = `👉 ${j1.a}`;
+          tellEnglishJoke(j1);
+        }
+
+        timerInterval = setInterval(() => {
+          timeLeft--;
+          updateTimerDisplay();
+
+          if (timeLeft === 90) {
+            const j2 = englishJokes[currentJokeIndex2];
+            document.getElementById('joke-q').innerText = `🤣 Joke 2: ${j2.q}`;
+            document.getElementById('joke-a').innerText = `👉 ${j2.a}`;
+            tellEnglishJoke(j2);
+          }
+
+          if (timeLeft <= 0) {
+            clearInterval(timerInterval);
+            isRunning = false;
+            btn.innerText = "開始計時";
+            document.getElementById('joke-q').innerText = "🎉 3分鐘刷牙完成！";
+            document.getElementById('joke-a').innerText = "記得點選頭像登記打卡喔！";
+            speak("太棒了，刷牙完成，請點選頭像登記打卡。");
+          }
+        }, 1000);
+      }
+    }
+
+    function resetTimer() {
+      clearInterval(timerInterval);
+      isRunning = false;
+      timeLeft = 180;
+      document.getElementById('btn-start').innerText = "開始計時";
+      document.getElementById('joke-q').innerText = "準備開始刷牙 🪥";
+      document.getElementById('joke-a').innerText = "點「開始計時」聽笑話";
+      updateTimerDisplay();
+    }
+
+    function renderBrushStatus() {
+      members.forEach(m => {
+        const id = memberIdMap[m];
+        const statusEl = document.getElementById(`st-${id}`);
+        const cardEl = document.getElementById(`m-${id}`);
+        const mRecord = (cloudData.brush && cloudData.brush[m]) || {};
+
+        cardEl.className = 'member-btn';
+        if (mRecord.morning && mRecord.night) {
+          cardEl.classList.add('done-all');
+          statusEl.innerText = '早晚 ✓';
+        } else if (mRecord.morning) {
+          cardEl.classList.add('done-morning');
+          statusEl.innerText = '早 ☀️';
+        } else if (mRecord.night) {
+          cardEl.classList.add('done-night');
+          statusEl.innerText = '晚 🌙';
+        } else {
+          statusEl.innerText = '未打卡';
+        }
+      });
+    }
+
+    function renderLists() {
+      const configs = [
+        { key: 'morning_timmy', sheet: 'Timmy', el: 'morning-timmy-list', cat: '早餐備忘', mem: 'Timmy' },
+        { key: 'morning_chloe', sheet: 'Chloe', el: 'morning-chloe-list', cat: '早餐備忘', mem: 'Chloe' },
+        { key: 'night_timmy', sheet: 'Night_Timmy', el: 'night-timmy-list', cat: '晚間待辦', mem: 'Timmy' },
+        { key: 'night_chloe', sheet: 'Night_Chloe', el: 'night-chloe-list', cat: '晚間待辦', mem: 'Chloe' },
+        { key: 'study_timmy', sheet: 'Study_Timmy', el: 'study-timmy-list', cat: '讀書計畫', mem: 'Timmy' },
+        { key: 'parent_notes', sheet: 'Notes', el: 'parent-notes-list', cat: '爸媽叮嚀', mem: '' }
+      ];
+
+      configs.forEach(cfg => {
+        const el = document.getElementById(cfg.el);
+        if (!el) return;
+        const items = cloudData[cfg.key] || [];
+        el.innerHTML = items.length ? '' : '<li style="color: var(--text-muted); font-size:0.75rem;">目前無事項</li>';
+        items.forEach(item => {
+          const li = document.createElement('li');
+          if (item.done) li.classList.add('completed');
+          li.innerHTML = `
+            <input type="checkbox" ${item.done ? 'checked' : ''} onchange="handleToggleTask('${cfg.sheet}', ${item.id}, ${item.done}, '${cfg.key}', '${cfg.cat}', '${cfg.mem}')">
+            <span style="flex:1; font-size:0.75rem;">${item.text}</span>
+          `;
+          el.appendChild(li);
+        });
+      });
+    }
+
+    function renderChores() {
+      const chores = cloudData.chores || defaultChores;
+      const dayIdx = new Date().getDay();
+      const todayChore = chores[dayIdx] || defaultChores[dayIdx];
+      document.getElementById('chore-display').innerText = `${todayChore.person}：${todayChore.chore}`;
+
+      const btn = document.getElementById('btn-chore-done');
+      if (cloudData.chore_today_done && cloudData.chore_today_done.done) {
+        btn.className = 'btn-chore-done completed';
+        btn.innerText = `✅ 今日已完成 (${cloudData.chore_today_done.time})`;
+      } else {
+        btn.className = 'btn-chore-done';
+        btn.innerText = `✨ 完成今日家事`;
+      }
+
+      const scheduleEl = document.getElementById('chore-schedule');
+      scheduleEl.innerHTML = chores.map((c, i) => `
+        <li style="border:none; padding: 1px 0; ${i === dayIdx ? 'font-weight:bold; color:var(--primary);' : ''}">
+          <span class="badge">${c.day}</span> <b>${c.person}</b> - ${c.chore} ${i === dayIdx ? '👈' : ''}
+        </li>
+      `).join('');
+    }
+
+    function openChoreModal() {
+      const chores = cloudData.chores || defaultChores;
+      const container = document.getElementById('chore-edit-list');
+      container.innerHTML = chores.map((c, i) => `
+        <div class="edit-row">
+          <span>${c.day}</span>
+          <input type="text" id="chore-p-${i}" value="${c.person}" style="width:70px;" placeholder="人">
+          <input type="text" id="chore-c-${i}" value="${c.chore}" style="flex:1;" placeholder="事">
+        </div>
+      `).join('');
+      document.getElementById('chore-modal').showModal();
+    }
+
+    async function saveChores() {
+      const updated = [];
+      const days = ['週日','週一','週二','週三','週四','週五','週六'];
+      for (let i = 0; i < 7; i++) {
+        updated.push({
+          day: days[i],
+          person: document.getElementById(`chore-p-${i}`).value.trim() || '無',
+          chore: document.getElementById(`chore-c-${i}`).value.trim() || '無'
+        });
+      }
+      cloudData.chores = updated;
+      document.getElementById('chore-modal').close();
+      renderChores();
+
+      await postToCloud({ action: 'update_chores', chores: updated });
+      setTimeout(fetchCloudData, 1500);
+    }
+
+    updateClock();
+    renderBrushStatus();
+    renderLists();
+    renderChores();
+    fetchCloudData();
+  </script>
+</body>
+</html>
