@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>溫馨家庭智慧資訊看板</title>
   <style>
     :root {
@@ -26,11 +26,15 @@
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft JhengHei", Roboto, sans-serif;
     }
 
+    /* ========================================================
+       🖥️ 平板 / 大螢幕模式 (預設：高度 100vh 鎖定，絕無外層捲軸)
+       ======================================================== */
     body {
       background-color: var(--bg-dark);
       color: var(--text-main);
-      padding: 16px 20px;
-      min-height: 100vh;
+      padding: 12px 16px;
+      height: 100vh;
+      overflow: hidden; /* 平板鎖定整頁，不產生外層捲軸 */
       display: flex;
       flex-direction: column;
       user-select: none;
@@ -38,41 +42,41 @@
 
     /* 頂部戰情列 */
     .header {
+      flex-shrink: 0;
       display: flex;
       justify-content: space-between;
       align-items: center;
       background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
       border: 2px solid var(--accent-blue);
-      border-radius: 16px;
-      padding: 12px 20px;
-      margin-bottom: 16px;
-      box-shadow: 0 8px 24px rgba(56, 189, 248, 0.15);
+      border-radius: 12px;
+      padding: 8px 16px;
+      margin-bottom: 10px;
+      box-shadow: 0 4px 16px rgba(56, 189, 248, 0.15);
       gap: 12px;
-      flex-wrap: wrap;
     }
 
     .title-group h1 {
-      font-size: 1.5rem;
+      font-size: 1.3rem;
       font-weight: 900;
-      letter-spacing: 1px;
       color: #ffffff;
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 6px;
+      white-space: nowrap;
     }
 
     .badge-home {
       background: #0284c7;
       color: white;
-      font-size: 0.8rem;
-      padding: 2px 8px;
-      border-radius: 6px;
+      font-size: 0.75rem;
+      padding: 2px 6px;
+      border-radius: 4px;
     }
 
     .sync-status {
-      font-size: 0.8rem;
+      font-size: 0.75rem;
       color: var(--accent-green);
-      margin-top: 4px;
+      margin-top: 2px;
       font-weight: bold;
     }
 
@@ -80,103 +84,107 @@
     .datetime-bar {
       display: flex;
       align-items: center;
-      gap: 14px;
+      gap: 12px;
+      white-space: nowrap;
     }
 
     .date-display-large {
-      font-size: 1.8rem;
+      font-size: 1.6rem;
       font-weight: 900;
       color: var(--accent-blue);
-      text-shadow: 0 0 12px rgba(56, 189, 248, 0.35);
+      text-shadow: 0 0 10px rgba(56, 189, 248, 0.35);
       line-height: 1;
-      white-space: nowrap;
     }
 
     .clock-large {
-      font-size: 2.2rem;
+      font-size: 1.9rem;
       font-weight: 900;
       font-family: "Courier New", monospace, sans-serif;
       color: var(--accent-gold);
-      text-shadow: 0 0 12px rgba(251, 191, 36, 0.35);
+      text-shadow: 0 0 10px rgba(251, 191, 36, 0.35);
       line-height: 1;
-      white-space: nowrap;
     }
 
     .controls-group {
       display: flex;
-      gap: 8px;
+      gap: 6px;
+      flex-shrink: 0;
     }
 
     .btn-top {
       background: #334155;
       color: white;
       border: 1px solid #475569;
-      padding: 6px 12px;
+      padding: 5px 10px;
       border-radius: 6px;
-      font-size: 0.85rem;
+      font-size: 0.8rem;
       font-weight: bold;
       cursor: pointer;
       white-space: nowrap;
     }
     .btn-top:hover { background: #475569; }
 
-    /* 6格卡片主佈局：電腦 3 欄 / 平板 2 欄 */
+    /* 6格卡片主佈局：電腦/平板自動填滿剩餘高度 */
     .dashboard-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
-      gap: 16px;
+      grid-template-rows: repeat(2, 1fr);
+      gap: 10px;
       flex: 1;
+      min-height: 0; /* 確保 Grid 內部高度計算不溢出 */
     }
 
     /* 卡片通用樣式 */
     .card {
       background: var(--card-bg);
-      border: 2px solid var(--card-border);
-      border-radius: 14px;
-      padding: 16px;
+      border: 1.5px solid var(--card-border);
+      border-radius: 12px;
+      padding: 12px 14px;
       display: flex;
       flex-direction: column;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+      min-height: 0;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
     }
 
     .card-header {
-      font-size: 1.15rem;
+      font-size: 1.05rem;
       font-weight: bold;
-      margin-bottom: 12px;
-      padding-bottom: 8px;
-      border-bottom: 2px solid #334155;
+      margin-bottom: 8px;
+      padding-bottom: 6px;
+      border-bottom: 1.5px solid #334155;
       display: flex;
       justify-content: space-between;
       align-items: center;
+      flex-shrink: 0;
     }
 
-    /* 各卡片主題顏色 */
-    .c-blue { border-top: 5px solid var(--accent-blue); }
-    .c-purple { border-top: 5px solid var(--accent-purple); }
-    .c-green { border-top: 5px solid var(--accent-green); }
-    .c-rose { border-top: 5px solid var(--accent-rose); }
-    .c-gold { border-top: 5px solid var(--accent-gold); }
-    .c-amber { border-top: 5px solid var(--accent-amber); }
+    .c-blue { border-top: 4px solid var(--accent-blue); }
+    .c-purple { border-top: 4px solid var(--accent-purple); }
+    .c-green { border-top: 4px solid var(--accent-green); }
+    .c-rose { border-top: 4px solid var(--accent-rose); }
+    .c-gold { border-top: 4px solid var(--accent-gold); }
+    .c-amber { border-top: 4px solid var(--accent-amber); }
 
+    /* 卡片內容溢出時只在卡片內滾動 */
     .card-body {
       flex: 1;
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      gap: 6px;
       overflow-y: auto;
-      font-size: 0.95rem;
-      line-height: 1.5;
+      font-size: 0.85rem;
+      line-height: 1.4;
     }
 
-    /* 清單項目樣式 */
     .item-row {
       background: #0f172a;
-      border-radius: 8px;
-      padding: 8px 12px;
+      border-radius: 6px;
+      padding: 6px 10px;
       display: flex;
       align-items: center;
       justify-content: space-between;
       border: 1px solid #334155;
+      gap: 8px;
     }
 
     .item-highlight {
@@ -186,39 +194,35 @@
 
     /* 底部作息狀態條 */
     .footer-routine {
-      margin-top: 16px;
+      flex-shrink: 0;
+      margin-top: 10px;
       background: #1e293b;
       border: 1px solid #334155;
-      border-radius: 10px;
-      padding: 8px 16px;
+      border-radius: 8px;
+      padding: 6px 14px;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      font-size: 0.85rem;
+      font-size: 0.8rem;
       color: var(--text-muted);
     }
 
     /* ========================================================
-       📱 響應式斷點 (RWD Media Queries)
+       📱 手機模式 (螢幕寬度 <= 768px 或直立手機)
+       解除 100vh 鎖定，自動換行並允許整頁自然上下滾動
        ======================================================== */
-
-    /* 平板螢幕 (寬度 <= 1024px)：自動變成 2 欄 */
-    @media (max-width: 1024px) {
-      .dashboard-grid {
-        grid-template-columns: repeat(2, 1fr);
-      }
-    }
-
-    /* 手機直向螢幕 (寬度 <= 768px)：自動變成單欄直式滾動 */
     @media (max-width: 768px) {
       body {
-        padding: 10px;
+        height: auto; /* 解除全螢幕鎖定 */
+        min-height: 100vh;
+        overflow-y: auto; /* 開啟手機上下滑動捲軸 */
+        padding: 12px;
       }
 
       .header {
         flex-direction: column;
         align-items: stretch;
-        gap: 12px;
+        gap: 10px;
         padding: 12px;
       }
 
@@ -232,7 +236,7 @@
       }
 
       .clock-large {
-        font-size: 1.6rem;
+        font-size: 1.5rem;
       }
 
       .controls-group {
@@ -247,20 +251,34 @@
         font-size: 0.75rem;
       }
 
-      /* 6 個小格在手機上強制單欄滿版 */
+      /* 6 個小格在手機上一律變成「單欄滿版」，高度自適應延伸 */
       .dashboard-grid {
         grid-template-columns: 1fr;
-        gap: 12px;
+        grid-template-rows: auto;
+        gap: 14px;
+        height: auto;
       }
 
       .card {
+        min-height: auto;
         padding: 14px;
+      }
+
+      .card-body {
+        overflow-y: visible; /* 手機直接撐開內容，讓整個頁面滑動 */
+        gap: 8px;
+        font-size: 0.95rem;
+      }
+
+      .item-row {
+        padding: 10px 12px;
       }
 
       .footer-routine {
         flex-direction: column;
         gap: 6px;
         text-align: center;
+        margin-top: 14px;
       }
     }
   </style>
@@ -270,7 +288,7 @@
   <!-- 頂部資訊與控制列 -->
   <div class="header">
     <div class="title-group">
-      <h1>🏡 幸福家庭智慧看板 <span class="badge-home">自動響應</span></h1>
+      <h1>🏡 幸福家庭智慧看板 <span class="badge-home">自動適配</span></h1>
       <div class="sync-status">🟢 系統運作中</div>
     </div>
 
@@ -287,14 +305,14 @@
     </div>
   </div>
 
-  <!-- 6 格響應式卡片主區域 -->
+  <!-- 6 格卡片主區域 -->
   <div class="dashboard-grid">
 
     <!-- 第 1 格：今日行程 -->
     <div class="card c-blue">
       <div class="card-header" style="color: var(--accent-blue);">
         <span>📅 今日重要行程</span>
-        <span style="font-size:0.8rem;">自動排程</span>
+        <span style="font-size:0.75rem;">自動排程</span>
       </div>
       <div class="card-body">
         <div class="item-row">
@@ -306,7 +324,7 @@
           <span>聚會</span>
         </div>
         <div class="item-row">
-          <span>⏰ 20:30 運動與伸展</span>
+          <span>⏰ 20:30 運動與核心伸展</span>
           <span>自主</span>
         </div>
       </div>
@@ -316,20 +334,20 @@
     <div class="card c-purple">
       <div class="card-header" style="color: var(--accent-purple);">
         <span>🗓️ 未來一週行程</span>
-        <span style="font-size:0.8rem;">未來 7 天</span>
+        <span style="font-size:0.75rem;">未來 7 天</span>
       </div>
       <div class="card-body">
         <div class="item-row">
           <span>週六 10:00</span>
-          <span>採買日常用品與生鮮</span>
+          <span>採買日常用品與生鮮食材</span>
         </div>
         <div class="item-row">
           <span>週日 15:00</span>
-          <span>戶外休閒 / 公園健走</span>
+          <span>戶外休閒 / 綠地健走</span>
         </div>
         <div class="item-row">
           <span>下週二 19:00</span>
-          <span>垃圾車定點回收日</span>
+          <span>垃圾車定點資源回收</span>
         </div>
       </div>
     </div>
@@ -338,7 +356,7 @@
     <div class="card c-green">
       <div class="card-header" style="color: var(--accent-green);">
         <span>🌤️ 氣象與外出指引</span>
-        <span style="font-size:0.8rem;">今日天氣</span>
+        <span style="font-size:0.75rem;">今日天氣</span>
       </div>
       <div class="card-body">
         <div class="item-row">
@@ -347,7 +365,7 @@
         </div>
         <div class="item-row">
           <span>🌧️ 降雨機率</span>
-          <span>20% (多雲到晴)</span>
+          <span>20% (晴時多雲)</span>
         </div>
         <div class="item-row">
           <span>👕 穿著指引</span>
@@ -360,7 +378,7 @@
     <div class="card c-rose">
       <div class="card-header" style="color: var(--accent-rose);">
         <span>📌 家庭溫馨留言板</span>
-        <span style="font-size:0.8rem;">提醒備忘</span>
+        <span style="font-size:0.75rem;">備忘清單</span>
       </div>
       <div class="card-body">
         <div class="item-row">
@@ -372,7 +390,7 @@
           <span>超商包裹已送達</span>
         </div>
         <div class="item-row">
-          <span>🔑 出門檢查</span>
+          <span>🔑 出門安全檢查</span>
           <span>隨身鑰匙、水壺、瓦斯與電燈關閉</span>
         </div>
       </div>
@@ -382,7 +400,7 @@
     <div class="card c-gold">
       <div class="card-header" style="color: var(--accent-gold);">
         <span>🥗 健康生活與作息</span>
-        <span style="font-size:0.8rem;">今日節奏</span>
+        <span style="font-size:0.75rem;">今日節奏</span>
       </div>
       <div class="card-body">
         <div class="item-row">
@@ -404,7 +422,7 @@
     <div class="card c-amber">
       <div class="card-header" style="color: var(--accent-amber);">
         <span>📋 本週待辦事項</span>
-        <span style="font-size:0.8rem;">進度追蹤</span>
+        <span style="font-size:0.75rem;">進度追蹤</span>
       </div>
       <div class="card-body">
         <div class="item-row">
@@ -412,7 +430,7 @@
           <span class="item-highlight">進行中</span>
         </div>
         <div class="item-row">
-          <span>🚗 汽機車胎壓與電瓶檢查</span>
+          <span>🚗 汽機車胎壓與電瓶保養</span>
           <span>待確認</span>
         </div>
         <div class="item-row">
@@ -426,12 +444,11 @@
 
   <!-- 底部作息狀態列 -->
   <div class="footer-routine">
-    <span>💡 <b>小提示：</b> 支援手機、平板與大螢幕直橫向自動切換。</span>
+    <span>💡 <b>小提示：</b> 平板/大螢幕一頁填滿展示，手機自動轉為單欄滾動模式。</span>
     <span>⚡ 系統即時連線運作中</span>
   </div>
 
   <script>
-    // 語音發聲控制
     function testVoice() {
       if ('speechSynthesis' in window) {
         window.speechSynthesis.cancel();
@@ -442,7 +459,6 @@
       }
     }
 
-    // 全螢幕切換
     function toggleFullScreen() {
       if (!document.fullscreenElement) {
         document.documentElement.requestFullscreen().catch(() => {});
@@ -451,7 +467,6 @@
       }
     }
 
-    // 時鐘更新
     function updateClock() {
       const now = new Date();
       const h = String(now.getHours()).padStart(2, '0');
