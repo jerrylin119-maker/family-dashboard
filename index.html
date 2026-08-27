@@ -2,8 +2,8 @@
 <html lang="zh-TW">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>家庭日常提醒看板 (雲端 6 宮格版)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>家庭日常提醒看板 (iPad mini 專用版)</title>
   <style>
     :root {
       --bg-color: #f0f4f8;
@@ -18,104 +18,158 @@
       --text-muted: #6b7280;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-    body { background: var(--bg-color); color: var(--text); padding: 16px; }
     
-    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
-    .clock { font-size: 2rem; font-weight: bold; color: var(--primary); }
-    .sync-status { font-size: 0.8rem; color: var(--accent); font-weight: bold; }
+    /* 針對 iPad mini 緊湊化滿版佈局 */
+    html, body {
+      height: 100vh;
+      overflow: hidden;
+    }
+    body {
+      background: var(--bg-color);
+      color: var(--text);
+      padding: 10px 14px;
+      display: flex;
+      flex-direction: column;
+      user-select: none;
+    }
     
-    /* 完美 6 宮格 (3 欄 x 2 列) */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+      flex-shrink: 0;
+    }
+    .clock { font-size: 1.6rem; font-weight: 800; color: var(--primary); }
+    .sync-status { font-size: 0.75rem; color: var(--accent); font-weight: bold; }
+    
+    /* 完美 6 宮格：3 欄 x 2 列 填滿螢幕 */
     .grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
-      gap: 14px;
-    }
-    @media (max-width: 1024px) {
-      .grid { grid-template-columns: repeat(2, 1fr); }
-    }
-    @media (max-width: 640px) {
-      .grid { grid-template-columns: 1fr; }
+      grid-template-rows: repeat(2, 1fr);
+      gap: 10px;
+      flex: 1;
+      min-height: 0;
     }
 
     .card {
       background: var(--card-bg);
-      border-radius: 16px;
-      padding: 16px 18px;
-      box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+      border-radius: 12px;
+      padding: 10px 12px;
+      box-shadow: 0 3px 6px -1px rgba(0,0,0,0.05);
       display: flex;
       flex-direction: column;
       justify-content: space-between;
-      min-height: 310px;
+      min-height: 0;
+      overflow: hidden;
     }
-    .card h2 { font-size: 1.15rem; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+    .card h2 {
+      font-size: 0.95rem;
+      font-weight: 800;
+      margin-bottom: 6px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-shrink: 0;
+    }
     
-    /* 刷牙計時與英文笑話展示 */
-    .timer-display { font-size: 3rem; font-weight: 800; text-align: center; color: var(--primary); margin: 2px 0; }
+    /* 刷牙計時與英文笑話 */
+    .timer-display {
+      font-size: 2.2rem;
+      font-weight: 800;
+      text-align: center;
+      color: var(--primary);
+      line-height: 1;
+      margin: 2px 0;
+    }
     .joke-box {
       background: #f8fafc;
-      border: 1.5px dashed #cbd5e1;
-      border-radius: 10px;
-      padding: 8px 10px;
-      margin: 6px 0;
-      min-height: 52px;
+      border: 1px dashed #cbd5e1;
+      border-radius: 8px;
+      padding: 4px 6px;
+      margin: 4px 0;
       text-align: center;
-      font-size: 0.85rem;
+      font-size: 0.75rem;
+      min-height: 40px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
     }
     .joke-q { font-weight: bold; color: #1e293b; }
     .joke-a { color: #d97706; font-weight: 600; margin-top: 2px; }
 
-    .controls { display: flex; gap: 8px; justify-content: center; margin-bottom: 8px; }
-    button { background: var(--primary); color: white; border: none; padding: 7px 14px; border-radius: 8px; font-size: 0.9rem; cursor: pointer; font-weight: bold; }
+    .controls { display: flex; gap: 6px; justify-content: center; margin-bottom: 4px; }
+    button {
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      font-weight: bold;
+    }
     button:active { transform: scale(0.98); }
     button.btn-reset { background: var(--text-muted); }
     
     .member-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; }
-    .member-btn { background: #e5e7eb; color: var(--text); border-radius: 8px; padding: 6px 2px; text-align: center; cursor: pointer; border: 2px solid transparent; font-size: 0.85rem; }
+    .member-btn {
+      background: #e5e7eb;
+      color: var(--text);
+      border-radius: 6px;
+      padding: 4px 1px;
+      text-align: center;
+      cursor: pointer;
+      border: 1.5px solid transparent;
+      font-size: 0.75rem;
+    }
     .member-btn.done-morning { border-color: #f59e0b; background: #fef3c7; }
     .member-btn.done-night { border-color: #10b981; background: #d1fae5; }
     .member-btn.done-all { border-color: #10b981; background: #a7f3d0; font-weight: bold; }
-    .member-btn span { display: block; font-size: 0.7rem; color: var(--text-muted); margin-top: 2px; }
+    .member-btn span { display: block; font-size: 0.65rem; color: var(--text-muted); }
 
-    /* 清單樣式 */
-    ul { list-style: none; max-height: 160px; overflow-y: auto; }
-    li { display: flex; align-items: center; gap: 6px; padding: 4px 0; border-bottom: 1px solid #f3f4f6; }
+    /* 清單滾動容器 */
+    ul { list-style: none; overflow-y: auto; flex: 1; min-height: 0; }
+    li { display: flex; align-items: center; gap: 6px; padding: 3px 0; border-bottom: 1px solid #f3f4f6; }
     li.completed { text-decoration: line-through; color: var(--text-muted); }
-    input[type="checkbox"] { width: 17px; height: 17px; cursor: pointer; }
-    .input-group { display: flex; gap: 6px; margin-top: 6px; }
-    .input-group input { flex: 1; padding: 5px 8px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.85rem; }
-    .input-group button { padding: 5px 10px; font-size: 0.8rem; }
+    input[type="checkbox"] { width: 16px; height: 16px; cursor: pointer; flex-shrink: 0; }
     
-    .sub-section { margin-bottom: 8px; border-left: 3px solid var(--primary); padding-left: 8px; }
+    .input-group { display: flex; gap: 4px; margin-top: 4px; flex-shrink: 0; }
+    .input-group input { flex: 1; padding: 4px 6px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.75rem; }
+    .input-group button { padding: 4px 8px; font-size: 0.75rem; }
+    
+    .sub-section { margin-bottom: 4px; border-left: 3px solid var(--primary); padding-left: 6px; }
     .sub-section.timmy { border-color: var(--timmy); }
     .sub-section.chloe { border-color: var(--chloe); }
     .sub-section.study { border-color: var(--study); }
     .sub-section.parent { border-color: var(--parent); }
 
-    .badge { padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; background: #e5e7eb; }
-    .chore-highlight { font-size: 1.15rem; font-weight: bold; color: #ec4899; text-align: center; margin: 4px 0; }
-    .chore-action-box { text-align: center; margin: 6px 0; }
-    .btn-chore-done { background: #10b981; color: white; padding: 6px 16px; font-size: 0.9rem; border-radius: 8px; cursor: pointer; }
-    .btn-chore-done.completed { background: #d1fae5; color: #065f46; border: 2px solid #10b981; cursor: default; }
+    .badge { padding: 1px 4px; border-radius: 4px; font-size: 0.65rem; background: #e5e7eb; }
+    .chore-highlight { font-size: 1rem; font-weight: bold; color: #ec4899; text-align: center; margin: 2px 0; }
+    .chore-action-box { text-align: center; margin: 4px 0; }
+    .btn-chore-done { background: #10b981; color: white; padding: 4px 12px; font-size: 0.8rem; border-radius: 6px; cursor: pointer; }
+    .btn-chore-done.completed { background: #d1fae5; color: #065f46; border: 1.5px solid #10b981; cursor: default; }
 
-    dialog { border: none; border-radius: 12px; padding: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); width: 90%; max-width: 450px; margin: auto; }
+    dialog { border: none; border-radius: 12px; padding: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); width: 90%; max-width: 400px; margin: auto; }
     dialog::backdrop { background: rgba(0,0,0,0.4); }
-    .edit-row { display: flex; gap: 6px; margin-bottom: 8px; align-items: center; }
-    .edit-row span { width: 45px; font-weight: bold; }
-    .edit-row input { padding: 4px 8px; border: 1px solid #ccc; border-radius: 4px; }
+    .edit-row { display: flex; gap: 6px; margin-bottom: 6px; align-items: center; font-size: 0.85rem; }
+    .edit-row span { width: 40px; font-weight: bold; }
+    .edit-row input { padding: 3px 6px; border: 1px solid #ccc; border-radius: 4px; }
   </style>
 </head>
 <body>
 
   <div class="header">
     <div>
-      <h1 style="font-size: 1.35rem;">🏠 家庭日常提醒看板</h1>
-      <div id="date-display" style="color: var(--text-muted); font-size: 0.85rem;"></div>
+      <h1 style="font-size: 1.15rem; font-weight: 800;">🏠 家庭日常提醒看板</h1>
+      <div id="date-display" style="color: var(--text-muted); font-size: 0.75rem;"></div>
       <div id="sync-status" class="sync-status">☁️ 雲端狀態檢查中...</div>
     </div>
     <div style="text-align: right;">
       <div id="clock" class="clock">00:00:00</div>
-      <button onclick="fetchCloudData()" style="background: #e5e7eb; color: var(--text); padding: 3px 8px; font-size: 0.75rem; border-radius: 4px;">🔄 重新整理</button>
-      <button onclick="testSpeech()" style="background: #e5e7eb; color: var(--text); padding: 3px 8px; font-size: 0.75rem; border-radius: 4px;">🔊 語音測試</button>
+      <button onclick="fetchCloudData()" style="background: #e5e7eb; color: var(--text); padding: 2px 6px; font-size: 0.7rem; border-radius: 4px;">🔄 整理</button>
+      <button onclick="testSpeech()" style="background: #e5e7eb; color: var(--text); padding: 2px 6px; font-size: 0.7rem; border-radius: 4px;">🔊 語音</button>
     </div>
   </div>
 
@@ -129,7 +183,7 @@
         <div id="timer" class="timer-display">03:00</div>
         <div class="joke-box" id="joke-container">
           <div class="joke-q" id="joke-q">準備開始刷牙 🪥</div>
-          <div class="joke-a" id="joke-a">點擊「開始計時」聽第 1 則笑話</div>
+          <div class="joke-a" id="joke-a">點「開始計時」聽笑話</div>
         </div>
         <div class="controls">
           <button id="btn-start" onclick="toggleTimer()">開始計時</button>
@@ -137,7 +191,6 @@
         </div>
       </div>
       <div>
-        <div style="font-size: 0.8rem; font-weight: 600; margin-bottom: 3px;">點擊頭像打卡：</div>
         <div class="member-grid">
           <div class="member-btn" id="m-father" onclick="handleBrushCheck('爸爸')"><div>👨 爸爸</div><span id="st-father">未打卡</span></div>
           <div class="member-btn" id="m-mother" onclick="handleBrushCheck('媽媽')"><div>👩 媽媽</div><span id="st-mother">未打卡</span></div>
@@ -149,77 +202,71 @@
 
     <!-- 格子 2：Timmy 讀書計畫 -->
     <div class="card">
-      <div>
-        <h2>📚 Timmy 讀書計畫</h2>
-        <div class="sub-section study">
-          <ul id="study-timmy-list"></ul>
-        </div>
+      <h2>📚 Timmy 讀書計畫</h2>
+      <div class="sub-section study" style="flex:1; display:flex; flex-direction:column; min-height:0;">
+        <ul id="study-timmy-list"></ul>
       </div>
       <div class="input-group">
-        <input type="text" id="study-timmy-input" placeholder="新增今日科目/進度 (例: 英文第3課)...">
+        <input type="text" id="study-timmy-input" placeholder="新增進度 (例: 英文第3課)...">
         <button style="background: var(--study);" onclick="handleAddTask('Study_Timmy', 'study-timmy-input')">新增</button>
       </div>
     </div>
 
-    <!-- 格子 3：早餐備忘清單 (早晨提醒) -->
+    <!-- 格子 3：早餐備忘清單 -->
     <div class="card">
-      <div>
-        <h2>🍳 早餐備忘清單</h2>
+      <h2>🍳 早餐備忘清單</h2>
+      <div style="flex:1; display:flex; flex-direction:column; min-height:0; overflow-y:auto;">
         <div class="sub-section timmy">
-          <b style="color: var(--timmy); font-size: 0.85rem;">👦 Timmy 晨間備忘</b>
+          <b style="color: var(--timmy); font-size: 0.75rem;">👦 Timmy 晨間備忘</b>
           <ul id="morning-timmy-list"></ul>
-          <div class="input-group"><input type="text" id="morning-timmy-input" placeholder="新增備忘..."><button style="background: var(--timmy);" onclick="handleAddTask('Timmy', 'morning-timmy-input')">新增</button></div>
+          <div class="input-group"><input type="text" id="morning-timmy-input" placeholder="新增..."><button style="background: var(--timmy);" onclick="handleAddTask('Timmy', 'morning-timmy-input')">+</button></div>
         </div>
         <div class="sub-section chloe">
-          <b style="color: var(--chloe); font-size: 0.85rem;">👧 Chloe 晨間備忘</b>
+          <b style="color: var(--chloe); font-size: 0.75rem;">👧 Chloe 晨間備忘</b>
           <ul id="morning-chloe-list"></ul>
-          <div class="input-group"><input type="text" id="morning-chloe-input" placeholder="新增備忘..."><button style="background: var(--chloe);" onclick="handleAddTask('Chloe', 'morning-chloe-input')">新增</button></div>
+          <div class="input-group"><input type="text" id="morning-chloe-input" placeholder="新增..."><button style="background: var(--chloe);" onclick="handleAddTask('Chloe', 'morning-chloe-input')">+</button></div>
         </div>
       </div>
     </div>
 
-    <!-- 格子 4：晚餐後待辦事項 (晚間提醒) -->
+    <!-- 格子 4：晚餐後待辦事項 -->
     <div class="card">
-      <div>
-        <h2>🍽️ 晚餐後應完成事項</h2>
+      <h2>🍽️ 晚餐後應完成事項</h2>
+      <div style="flex:1; display:flex; flex-direction:column; min-height:0; overflow-y:auto;">
         <div class="sub-section timmy">
-          <b style="color: var(--timmy); font-size: 0.85rem;">👦 Timmy 晚間待辦</b>
+          <b style="color: var(--timmy); font-size: 0.75rem;">👦 Timmy 晚間待辦</b>
           <ul id="night-timmy-list"></ul>
-          <div class="input-group"><input type="text" id="night-timmy-input" placeholder="新增待辦..."><button style="background: var(--timmy);" onclick="handleAddTask('Night_Timmy', 'night-timmy-input')">新增</button></div>
+          <div class="input-group"><input type="text" id="night-timmy-input" placeholder="新增..."><button style="background: var(--timmy);" onclick="handleAddTask('Night_Timmy', 'night-timmy-input')">+</button></div>
         </div>
         <div class="sub-section chloe">
-          <b style="color: var(--chloe); font-size: 0.85rem;">👧 Chloe 晚間待辦</b>
+          <b style="color: var(--chloe); font-size: 0.75rem;">👧 Chloe 晚間待辦</b>
           <ul id="night-chloe-list"></ul>
-          <div class="input-group"><input type="text" id="night-chloe-input" placeholder="新增待辦..."><button style="background: var(--chloe);" onclick="handleAddTask('Night_Chloe', 'night-chloe-input')">新增</button></div>
+          <div class="input-group"><input type="text" id="night-chloe-input" placeholder="新增..."><button style="background: var(--chloe);" onclick="handleAddTask('Night_Chloe', 'night-chloe-input')">+</button></div>
         </div>
       </div>
     </div>
 
     <!-- 格子 5：今日輪值家事 -->
     <div class="card">
-      <div>
-        <h2>
-          <span>🧹 今日輪值家事</span>
-          <button style="background: transparent; color: var(--primary); font-size: 0.75rem; padding: 2px;" onclick="openChoreModal()">⚙️ 輪值設定</button>
-        </h2>
-        <div id="chore-display" class="chore-highlight">載入中...</div>
-        <div class="chore-action-box">
-          <button id="btn-chore-done" class="btn-chore-done" onclick="handleChoreCheck()">✨ 點擊完成今日家事</button>
-        </div>
+      <h2>
+        <span>🧹 今日輪值家事</span>
+        <button style="background: transparent; color: var(--primary); font-size: 0.7rem; padding: 0;" onclick="openChoreModal()">⚙️ 設定</button>
+      </h2>
+      <div id="chore-display" class="chore-highlight">載入中...</div>
+      <div class="chore-action-box">
+        <button id="btn-chore-done" class="btn-chore-done" onclick="handleChoreCheck()">✨ 完成今日家事</button>
       </div>
-      <ul id="chore-schedule" style="font-size: 0.8rem; color: var(--text-muted); max-height: 110px;"></ul>
+      <ul id="chore-schedule" style="font-size: 0.75rem; color: var(--text-muted);"></ul>
     </div>
 
-    <!-- 格子 6：💌 爸媽的叮嚀 (✨ 新增第 6 格) -->
+    <!-- 格子 6：💌 爸媽的叮嚀 -->
     <div class="card">
-      <div>
-        <h2 style="color: var(--parent);">💌 爸媽的叮嚀與鼓勵</h2>
-        <div class="sub-section parent">
-          <ul id="parent-notes-list"></ul>
-        </div>
+      <h2 style="color: var(--parent);">💌 爸媽的叮嚀與鼓勵</h2>
+      <div class="sub-section parent" style="flex:1; display:flex; flex-direction:column; min-height:0;">
+        <ul id="parent-notes-list"></ul>
       </div>
       <div class="input-group">
-        <input type="text" id="parent-notes-input" placeholder="寫下給孩子的叮嚀或鼓勵...">
+        <input type="text" id="parent-notes-input" placeholder="寫下叮嚀或鼓勵...">
         <button style="background: var(--parent);" onclick="handleAddTask('Notes', 'parent-notes-input')">新增</button>
       </div>
     </div>
@@ -228,9 +275,9 @@
 
   <!-- 家事自訂彈窗 -->
   <dialog id="chore-modal">
-    <h3 style="margin-bottom: 10px;">設定每週家事輪值內容</h3>
+    <h3 style="margin-bottom: 8px; font-size: 1rem;">設定每週家事輪值內容</h3>
     <div id="chore-edit-list"></div>
-    <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px;">
+    <div style="display: flex; justify-content: flex-end; gap: 6px; margin-top: 10px;">
       <button class="btn-reset" onclick="document.getElementById('chore-modal').close()">取消</button>
       <button onclick="saveChores()">儲存更換</button>
     </div>
@@ -242,7 +289,6 @@
     const members = ['爸爸', '媽媽', 'Timmy', 'Chloe'];
     const memberIdMap = { '爸爸': 'father', '媽媽': 'mother', 'Timmy': 'timmy', 'Chloe': 'chloe' };
     
-    // 英文冷笑話庫 (Joke Q, A, 中文釋義)
     const englishJokes = [
       { q: "Why do we tell actors to 'break a leg'?", a: "Because every play has a cast!", zh: "為什麼祝演員好運要說斷條腿？因為每齣劇都有演員名單(cast也有石膏的意思)！" },
       { q: "Why did the math book look sad?", a: "Because it had too many problems!", zh: "為什麼數學書看起來很難過？因為它有太多問題(題目)了！" },
@@ -288,18 +334,47 @@
     let currentJokeIndex1 = 0;
     let currentJokeIndex2 = 1;
     let triggeredToday = {};
+    let cachedVoices = [];
+
+    // ✨ 語音引擎初始化（優先抓取 Apple/微軟 高品質真人發音）
+    function initVoices() {
+      if ('speechSynthesis' in window) {
+        cachedVoices = window.speechSynthesis.getVoices();
+      }
+    }
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.onvoiceschanged = initVoices;
+      initVoices();
+    }
 
     function speak(text, lang = 'zh-TW') {
       if ('speechSynthesis' in window) {
         window.speechSynthesis.cancel();
         const utterance = new SpeechSynthesisUtterance(text);
         utterance.lang = lang;
-        utterance.rate = 0.95;
+        
+        if (cachedVoices.length === 0) initVoices();
+        
+        // 挑選最佳發音人
+        if (lang === 'zh-TW') {
+          const v = cachedVoices.find(i => 
+            (i.lang === 'zh-TW' || i.lang === 'cmn-Hant-TW') && 
+            (i.name.includes('Meijia') || i.name.includes('美佳') || i.name.includes('Hsiao') || i.name.includes('Natural') || i.name.includes('Google'))
+          ) || cachedVoices.find(i => i.lang.includes('zh'));
+          if (v) utterance.voice = v;
+          utterance.rate = 0.95;
+        } else if (lang === 'en-US') {
+          const v = cachedVoices.find(i => 
+            i.lang.includes('en') && (i.name.includes('Samantha') || i.name.includes('Natural') || i.name.includes('Google') || i.name.includes('Ava'))
+          );
+          if (v) utterance.voice = v;
+          utterance.rate = 0.9;
+        }
+
         window.speechSynthesis.speak(utterance);
       }
     }
 
-    // 播放英文笑話
     function tellEnglishJoke(joke) {
       if ('speechSynthesis' in window) {
         window.speechSynthesis.cancel();
@@ -307,23 +382,28 @@
         u1.lang = 'en-US';
         u1.rate = 0.9;
         
+        if (cachedVoices.length === 0) initVoices();
+        const ev = cachedVoices.find(i => i.lang.includes('en') && (i.name.includes('Samantha') || i.name.includes('Natural') || i.name.includes('Google')));
+        if (ev) u1.voice = ev;
+
         u1.onend = () => {
           setTimeout(() => {
             const u2 = new SpeechSynthesisUtterance(joke.a);
             u2.lang = 'en-US';
             u2.rate = 0.9;
+            if (ev) u2.voice = ev;
             window.speechSynthesis.speak(u2);
-          }, 800);
+          }, 700);
         };
         window.speechSynthesis.speak(u1);
       }
     }
 
     function testSpeech() {
-      speak("語音功能正常。以下為英文笑話測試：");
+      speak("語音升級完成，現在為您測試英文笑話：");
       setTimeout(() => {
         tellEnglishJoke(englishJokes[0]);
-      }, 1800);
+      }, 1600);
     }
 
     async function handleAddTask(sheetName, inputId) {
@@ -395,7 +475,6 @@
       });
     }
 
-    // JSONP 跨來源同步
     window.handleCloudResponse = function(data) {
       cloudData.morning_timmy = data.morning_timmy || [];
       cloudData.morning_chloe = data.morning_chloe || [];
@@ -472,7 +551,6 @@
     }
     setInterval(updateClock, 1000);
 
-    // 刷牙計時與 2 則英文笑話展示
     function updateTimerDisplay() {
       const m = Math.floor(timeLeft / 60).toString().padStart(2, '0');
       const s = (timeLeft % 60).toString().padStart(2, '0');
@@ -490,17 +568,15 @@
         btn.innerText = "暫停";
         isRunning = true;
         
-        // 隨機選取 2 則不重複笑話
         currentJokeIndex1 = Math.floor(Math.random() * englishJokes.length);
         do {
           currentJokeIndex2 = Math.floor(Math.random() * englishJokes.length);
         } while (currentJokeIndex2 === currentJokeIndex1 && englishJokes.length > 1);
 
-        // 開始時播報第 1 則笑話 (180s)
         if (timeLeft > 90) {
           const j1 = englishJokes[currentJokeIndex1];
           document.getElementById('joke-q').innerText = `😂 Joke 1: ${j1.q}`;
-          document.getElementById('joke-a').innerText = `👉 ${j1.a} (${j1.zh})`;
+          document.getElementById('joke-a').innerText = `👉 ${j1.a}`;
           tellEnglishJoke(j1);
         }
 
@@ -508,11 +584,10 @@
           timeLeft--;
           updateTimerDisplay();
 
-          // 90 秒 (1分半) 播報第 2 則笑話
           if (timeLeft === 90) {
             const j2 = englishJokes[currentJokeIndex2];
             document.getElementById('joke-q').innerText = `🤣 Joke 2: ${j2.q}`;
-            document.getElementById('joke-a').innerText = `👉 ${j2.a} (${j2.zh})`;
+            document.getElementById('joke-a').innerText = `👉 ${j2.a}`;
             tellEnglishJoke(j2);
           }
 
@@ -534,7 +609,7 @@
       timeLeft = 180;
       document.getElementById('btn-start').innerText = "開始計時";
       document.getElementById('joke-q').innerText = "準備開始刷牙 🪥";
-      document.getElementById('joke-a').innerText = "點擊「開始計時」聽第 1 則笑話";
+      document.getElementById('joke-a').innerText = "點「開始計時」聽笑話";
       updateTimerDisplay();
     }
 
@@ -548,13 +623,13 @@
         cardEl.className = 'member-btn';
         if (mRecord.morning && mRecord.night) {
           cardEl.classList.add('done-all');
-          statusEl.innerText = '早晚完成 ✓';
+          statusEl.innerText = '早晚 ✓';
         } else if (mRecord.morning) {
           cardEl.classList.add('done-morning');
-          statusEl.innerText = '早已打卡 ☀️';
+          statusEl.innerText = '早 ☀️';
         } else if (mRecord.night) {
           cardEl.classList.add('done-night');
-          statusEl.innerText = '晚已打卡 🌙';
+          statusEl.innerText = '晚 🌙';
         } else {
           statusEl.innerText = '未打卡';
         }
@@ -575,13 +650,13 @@
         const el = document.getElementById(cfg.el);
         if (!el) return;
         const items = cloudData[cfg.key] || [];
-        el.innerHTML = items.length ? '' : '<li style="color: var(--text-muted); font-size:0.85rem;">目前無事項</li>';
+        el.innerHTML = items.length ? '' : '<li style="color: var(--text-muted); font-size:0.75rem;">目前無事項</li>';
         items.forEach(item => {
           const li = document.createElement('li');
           if (item.done) li.classList.add('completed');
           li.innerHTML = `
             <input type="checkbox" ${item.done ? 'checked' : ''} onchange="handleToggleTask('${cfg.sheet}', ${item.id}, ${item.done}, '${cfg.key}', '${cfg.cat}', '${cfg.mem}')">
-            <span style="flex:1; font-size:0.85rem;">${item.text}</span>
+            <span style="flex:1; font-size:0.75rem;">${item.text}</span>
           `;
           el.appendChild(li);
         });
@@ -600,13 +675,13 @@
         btn.innerText = `✅ 今日已完成 (${cloudData.chore_today_done.time})`;
       } else {
         btn.className = 'btn-chore-done';
-        btn.innerText = `✨ 點擊完成今日家事`;
+        btn.innerText = `✨ 完成今日家事`;
       }
 
       const scheduleEl = document.getElementById('chore-schedule');
       scheduleEl.innerHTML = chores.map((c, i) => `
-        <li style="border:none; padding: 2px 0; ${i === dayIdx ? 'font-weight:bold; color:var(--primary);' : ''}">
-          <span class="badge">${c.day}</span> <b>${c.person}</b> - ${c.chore} ${i === dayIdx ? '👈 今日' : ''}
+        <li style="border:none; padding: 1px 0; ${i === dayIdx ? 'font-weight:bold; color:var(--primary);' : ''}">
+          <span class="badge">${c.day}</span> <b>${c.person}</b> - ${c.chore} ${i === dayIdx ? '👈' : ''}
         </li>
       `).join('');
     }
@@ -617,8 +692,8 @@
       container.innerHTML = chores.map((c, i) => `
         <div class="edit-row">
           <span>${c.day}</span>
-          <input type="text" id="chore-p-${i}" value="${c.person}" style="width:90px;" placeholder="負責人">
-          <input type="text" id="chore-c-${i}" value="${c.chore}" style="flex:1;" placeholder="家事內容">
+          <input type="text" id="chore-p-${i}" value="${c.person}" style="width:70px;" placeholder="人">
+          <input type="text" id="chore-c-${i}" value="${c.chore}" style="flex:1;" placeholder="事">
         </div>
       `).join('');
       document.getElementById('chore-modal').showModal();
@@ -642,7 +717,6 @@
       setTimeout(fetchCloudData, 1500);
     }
 
-    // 啟動執行
     updateClock();
     renderBrushStatus();
     renderLists();
