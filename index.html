@@ -19,7 +19,6 @@
     }
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
     
-    /* 針對 iPad mini 緊湊化滿版佈局 */
     html, body {
       height: 100vh;
       overflow: hidden;
@@ -43,7 +42,6 @@
     .clock { font-size: 1.6rem; font-weight: 800; color: var(--primary); }
     .sync-status { font-size: 0.75rem; color: var(--accent); font-weight: bold; }
     
-    /* 完美 6 宮格：3 欄 x 2 列 填滿螢幕 */
     .grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
@@ -74,7 +72,6 @@
       flex-shrink: 0;
     }
     
-    /* 刷牙計時與英文笑話 */
     .timer-display {
       font-size: 2.2rem;
       font-weight: 800;
@@ -129,7 +126,6 @@
     .member-btn.done-all { border-color: #10b981; background: #a7f3d0; font-weight: bold; }
     .member-btn span { display: block; font-size: 0.65rem; color: var(--text-muted); }
 
-    /* 清單滾動容器 */
     ul { list-style: none; overflow-y: auto; flex: 1; min-height: 0; }
     li { display: flex; align-items: center; gap: 6px; padding: 3px 0; border-bottom: 1px solid #f3f4f6; }
     li.completed { text-decoration: line-through; color: var(--text-muted); }
@@ -157,38 +153,13 @@
     .edit-row span { width: 40px; font-weight: bold; }
     .edit-row input { padding: 3px 6px; border: 1px solid #ccc; border-radius: 4px; }
 
-    /* ========================================================
-       📱 手機模式：僅在此區塊解除鎖定，允許往下滾動，不影響平板
-       ======================================================== */
     @media (max-width: 768px) {
-      html, body {
-        height: auto !important;
-        min-height: 100vh;
-        overflow-y: auto !important; /* 開啟手機向下滾動 */
-      }
-      .header {
-        flex-direction: column;
-        align-items: stretch;
-      }
-      .header > div {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 8px;
-      }
-      .grid {
-        grid-template-columns: 1fr !important; /* 改為單欄 */
-        grid-template-rows: auto !important;
-        height: auto !important;
-      }
-      .card {
-        min-height: auto !important;
-        height: auto !important;
-        overflow: visible !important; /* 解除內部卡片高度限制 */
-      }
-      ul {
-        overflow-y: visible !important; /* 解除清單內部滾動，直接撐開 */
-      }
+      html, body { height: auto !important; min-height: 100vh; overflow-y: auto !important; }
+      .header { flex-direction: column; align-items: stretch; }
+      .header > div { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+      .grid { grid-template-columns: 1fr !important; grid-template-rows: auto !important; height: auto !important; }
+      .card { min-height: auto !important; height: auto !important; overflow: visible !important; }
+      ul { overflow-y: visible !important; }
     }
   </style>
 </head>
@@ -207,10 +178,9 @@
     </div>
   </div>
 
-  <!-- 6 宮格主要佈局 -->
   <div class="grid">
     
-    <!-- 格子 1：刷牙計時與英文笑話 -->
+    <!-- 格子 1 -->
     <div class="card">
       <div>
         <h2>🪥 刷牙計時 (聽英文笑話)</h2>
@@ -234,7 +204,7 @@
       </div>
     </div>
 
-    <!-- 格子 2：Timmy 讀書計畫 -->
+    <!-- 格子 2 -->
     <div class="card">
       <h2>📚 Timmy 讀書計畫</h2>
       <div class="sub-section study" style="flex:1; display:flex; flex-direction:column; min-height:0;">
@@ -246,7 +216,7 @@
       </div>
     </div>
 
-    <!-- 格子 3：早餐備忘清單 -->
+    <!-- 格子 3 -->
     <div class="card">
       <h2>🍳 早餐備忘清單</h2>
       <div style="flex:1; display:flex; flex-direction:column; min-height:0; overflow-y:auto;">
@@ -263,7 +233,7 @@
       </div>
     </div>
 
-    <!-- 格子 4：晚餐後待辦事項 -->
+    <!-- 格子 4 -->
     <div class="card">
       <h2>🍽️ 晚餐後應完成事項</h2>
       <div style="flex:1; display:flex; flex-direction:column; min-height:0; overflow-y:auto;">
@@ -280,7 +250,7 @@
       </div>
     </div>
 
-    <!-- 格子 5：今日輪值家事 -->
+    <!-- 格子 5 -->
     <div class="card">
       <h2>
         <span>🧹 今日輪值家事</span>
@@ -293,7 +263,7 @@
       <ul id="chore-schedule" style="font-size: 0.75rem; color: var(--text-muted);"></ul>
     </div>
 
-    <!-- 格子 6：💌 爸媽的叮嚀 -->
+    <!-- 格子 6 -->
     <div class="card">
       <h2 style="color: var(--parent);">💌 爸媽的叮嚀與鼓勵</h2>
       <div class="sub-section parent" style="flex:1; display:flex; flex-direction:column; min-height:0;">
@@ -323,6 +293,7 @@
     const members = ['爸爸', '媽媽', 'Timmy', 'Chloe'];
     const memberIdMap = { '爸爸': 'father', '媽媽': 'mother', 'Timmy': 'timmy', 'Chloe': 'chloe' };
     
+    // 擴充笑話庫
     const englishJokes = [
       { q: "Why do we tell actors to 'break a leg'?", a: "Because every play has a cast!", zh: "為什麼祝演員好運要說斷條腿？因為每齣劇都有演員名單(cast也有石膏的意思)！" },
       { q: "Why did the math book look sad?", a: "Because it had too many problems!", zh: "為什麼數學書看起來很難過？因為它有太多問題(題目)了！" },
@@ -330,8 +301,23 @@
       { q: "What is orange and sounds like a parrot?", a: "A carrot!", zh: "什麼東西是橘色的而且聽起來像鸚鵡(parrot)？是紅蘿蔔(carrot)！" },
       { q: "What do you call a fake noodle?", a: "An impasta!", zh: "你怎麼稱呼假的義大利麵？冒牌貨(impasta 諧音 imposter)！" },
       { q: "Why did the teddy bear say no to dessert?", a: "Because she was already stuffed!", zh: "為什麼泰迪熊不吃甜點？因為牠已經很飽了(stuffed也是填充玩具的意思)！" },
-      { q: "What do you call a sleeping dinosaur?", a: "A dino-snore!", zh: "你怎麼稱呼睡覺的恐龍？打呼龍(snore)！" }
+      { q: "What do you call a sleeping dinosaur?", a: "A dino-snore!", zh: "你怎麼稱呼睡覺的恐龍？打呼龍(snore)！" },
+      { q: "What do you call a bear with no teeth?", a: "A gummy bear!", zh: "沒有牙齒的熊叫什麼？小熊軟糖！" },
+      { q: "Why did the cookie go to the hospital?", a: "Because he felt crummy!", zh: "為什麼餅乾要去醫院？因為他覺得很不舒服(crummy也有充滿碎屑的意思)！" },
+      { q: "What do you call cheese that isn't yours?", a: "Nacho cheese!", zh: "不是你的起司叫什麼？玉米片起司(Nacho諧音Not your)！" },
+      { q: "Why did the banana go to the doctor?", a: "Because he wasn't peeling well!", zh: "為什麼香蕉去看醫生？因為他覺得不舒服(peeling諧音feeling)！" },
+      { q: "What do elves learn in school?", a: "The Elf-abet!", zh: "精靈在學校學什麼？精靈字母(Elf-abet諧音Alphabet)！" }
     ];
+
+    // 笑話洗牌袋機制：確保全部抽完才重複
+    let jokeBag = [];
+    function getNextJoke() {
+      if (jokeBag.length === 0) {
+        jokeBag = [...englishJokes];
+        jokeBag.sort(() => Math.random() - 0.5); // 洗牌
+      }
+      return jokeBag.pop();
+    }
 
     const defaultChores = [
       { day: '週日', person: '爸爸', chore: '大掃除清貓砂' },
@@ -365,12 +351,9 @@
     let timerInterval = null;
     let timeLeft = 180;
     let isRunning = false;
-    let currentJokeIndex1 = 0;
-    let currentJokeIndex2 = 1;
     let triggeredToday = {};
     let cachedVoices = [];
 
-    // ✨ 語音引擎初始化（優先抓取 Apple/微軟 高品質真人發音）
     function initVoices() {
       if ('speechSynthesis' in window) {
         cachedVoices = window.speechSynthesis.getVoices();
@@ -389,7 +372,6 @@
         
         if (cachedVoices.length === 0) initVoices();
         
-        // 挑選最佳發音人
         if (lang === 'zh-TW') {
           const v = cachedVoices.find(i => 
             (i.lang === 'zh-TW' || i.lang === 'cmn-Hant-TW') && 
@@ -404,7 +386,6 @@
           if (v) utterance.voice = v;
           utterance.rate = 0.9;
         }
-
         window.speechSynthesis.speak(utterance);
       }
     }
@@ -438,6 +419,40 @@
       setTimeout(() => {
         tellEnglishJoke(englishJokes[0]);
       }, 1600);
+    }
+
+    // 跨日自動重置偵測機制
+    function checkAndResetDaily() {
+      const todayStr = new Date().toLocaleDateString();
+      const lastDate = localStorage.getItem('familyBoardDate');
+      
+      // 若發現已經換日，自動將 UI 的狀態歸零
+      if (lastDate && lastDate !== todayStr) {
+        ['morning_timmy', 'morning_chloe', 'night_timmy', 'night_chloe', 'study_timmy'].forEach(key => {
+          if (cloudData[key]) {
+            cloudData[key].forEach(item => { 
+              if(item.done) {
+                item.done = false; 
+                // 發送請求告訴雲端也取消勾選
+                postToCloud({ action: 'toggle_task', sheetName: Object.keys(sheetToKeyMap).find(k => sheetToKeyMap[k] === key), rowId: item.id, done: false });
+              }
+            });
+          }
+        });
+        
+        cloudData.brush = { "爸爸": {}, "媽媽": {}, "Timmy": {}, "Chloe": {} };
+        cloudData.chore_today_done = { done: false, time: '' };
+        
+        // 可選：若後端支援，發送強制清空指令
+        postToCloud({ action: 'daily_reset' });
+        
+        localStorage.setItem('familyBoardDate', todayStr);
+        renderBrushStatus();
+        renderLists();
+        renderChores();
+      } else if (!lastDate) {
+        localStorage.setItem('familyBoardDate', todayStr);
+      }
     }
 
     async function handleAddTask(sheetName, inputId) {
@@ -524,6 +539,10 @@
       }
       
       document.getElementById('sync-status').innerText = "✅ 雲端已同步 (" + new Date().toLocaleTimeString().substring(0,5) + ")";
+      
+      // 每次讀取完雲端資料，強制檢查是否已經換日
+      checkAndResetDaily();
+      
       renderBrushStatus();
       renderLists();
       renderChores();
@@ -566,6 +585,9 @@
       document.getElementById('clock').innerText = timeStr;
       document.getElementById('date-display').innerText = dateStr;
 
+      // 即時跨日檢查
+      checkAndResetDaily();
+
       if (now.getSeconds() === 0 && now.getMinutes() % 2 === 0) fetchCloudData();
 
       if (hmStr === "07:00" && !triggeredToday["07:00"]) {
@@ -602,13 +624,11 @@
         btn.innerText = "暫停";
         isRunning = true;
         
-        currentJokeIndex1 = Math.floor(Math.random() * englishJokes.length);
-        do {
-          currentJokeIndex2 = Math.floor(Math.random() * englishJokes.length);
-        } while (currentJokeIndex2 === currentJokeIndex1 && englishJokes.length > 1);
+        // 改為從洗牌袋中抽取笑話
+        const j1 = getNextJoke();
+        let j2 = getNextJoke();
 
         if (timeLeft > 90) {
-          const j1 = englishJokes[currentJokeIndex1];
           document.getElementById('joke-q').innerText = `😂 Joke 1: ${j1.q}`;
           document.getElementById('joke-a').innerText = `👉 ${j1.a}`;
           tellEnglishJoke(j1);
@@ -619,7 +639,6 @@
           updateTimerDisplay();
 
           if (timeLeft === 90) {
-            const j2 = englishJokes[currentJokeIndex2];
             document.getElementById('joke-q').innerText = `🤣 Joke 2: ${j2.q}`;
             document.getElementById('joke-a').innerText = `👉 ${j2.a}`;
             tellEnglishJoke(j2);
