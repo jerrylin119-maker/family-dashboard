@@ -129,6 +129,7 @@
     .member-btn.done-all { border-color: #10b981; background: #a7f3d0; font-weight: bold; }
     .member-btn span { display: block; font-size: 0.65rem; color: var(--text-muted); }
 
+    /* 清單滾動容器 */
     ul { list-style: none; overflow-y: auto; flex: 1; min-height: 0; }
     li { display: flex; align-items: center; gap: 6px; padding: 3px 0; border-bottom: 1px solid #f3f4f6; }
     li.completed { text-decoration: line-through; color: var(--text-muted); }
@@ -294,7 +295,7 @@
   </dialog>
 
   <script>
-    // 您專屬的 API 網址 (維持不變)
+    // 家庭看板專用的 API 網址
     const API_URL = "https://script.google.com/macros/s/AKfycby0wGYcXHbGfaG8UEI7qt4eqVvYEX2E95hQFC4qNWMNa_dPeMr5v2zMGO__P6o7WSM74g/exec";
 
     const members = ['爸爸', '媽媽', 'Timmy', 'Chloe'];
@@ -433,24 +434,28 @@
       const todayStr = new Date().toLocaleDateString();
       const lastDate = localStorage.getItem('familyBoardDate');
       
-      // 若發現已經換日，自動將 UI 的狀態歸零
       if (lastDate && lastDate !== todayStr) {
-        ['morning_timmy', 'morning_chloe', 'night_timmy', 'night_chloe', 'study_timmy'].forEach(key => {
+        
+        // 1. 一般清單：保留文字，僅取消勾選狀態
+        ['morning_timmy', 'morning_chloe', 'night_timmy', 'night_chloe'].forEach(key => {
           if (cloudData[key]) {
             cloudData[key].forEach(item => { 
               if(item.done) {
                 item.done = false; 
-                // 順便發送請求告訴雲端也取消勾選，確保網頁剛好沒關閉時也能同步
                 postToCloud({ action: 'toggle_task', sheetName: Object.keys(sheetToKeyMap).find(k => sheetToKeyMap[k] === key), rowId: item.id, done: false });
               }
             });
           }
         });
         
+        // 2. Timmy 讀書計畫：完全清空陣列
+        cloudData['study_timmy'] = [];
+        
+        // 3. 刷牙與家事歸零
         cloudData.brush = { "爸爸": {}, "媽媽": {}, "Timmy": {}, "Chloe": {} };
         cloudData.chore_today_done = { done: false, time: '' };
         
-        // 發送強制清空指令給您後端新增的 autoDailyReset
+        // 發送強制清空指令給雲端
         postToCloud({ action: 'daily_reset' });
         
         localStorage.setItem('familyBoardDate', todayStr);
