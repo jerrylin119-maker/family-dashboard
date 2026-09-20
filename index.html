@@ -158,6 +158,7 @@
     .edit-row input { padding: 3px 6px; border: 1px solid #ccc; border-radius: 4px; }
 
     /* 整列可點（小朋友點文字也能勾選） */
+    li { -webkit-touch-callout: none; }
     li label { display: flex; align-items: center; gap: 6px; flex: 1; cursor: pointer; padding: 2px 0; font-size: 0.75rem; }
 
     /* 常用項目一鍵新增 */
@@ -486,16 +487,9 @@
       
       if (lastDate && lastDate !== todayStr) {
         
-        // 1. 一般清單：保留文字，僅取消勾選狀態
+        // 1. 一般清單：保留文字，僅取消勾選狀態（雲端的 daily_reset 會一併處理，這裡只先更新畫面）
         ['morning_timmy', 'morning_chloe', 'night_timmy', 'night_chloe'].forEach(key => {
-          if (cloudData[key]) {
-            cloudData[key].forEach(item => { 
-              if(item.done) {
-                item.done = false; 
-                postToCloud({ action: 'toggle_task', sheetName: Object.keys(sheetToKeyMap).find(k => sheetToKeyMap[k] === key), rowId: item.id, done: false });
-              }
-            });
-          }
+          (cloudData[key] || []).forEach(item => { item.done = false; });
         });
         
         // 2. Timmy 讀書計畫：完全清空陣列
@@ -506,8 +500,10 @@
         cloudData.chore_today_done = { done: false, time: '' };
         
         // 發送強制清空指令給雲端
+        // （雲端每天只會真的重置一次；若別的裝置已重置過，重新讀取後就會回到雲端的實際狀態）
         postToCloud({ action: 'daily_reset' });
-        
+        setTimeout(fetchCloudData, 1500);
+
         localStorage.setItem('familyBoardDate', todayStr);
         renderBrushStatus();
         renderLists();
@@ -529,6 +525,48 @@
       h[sheetName] = [...texts, ...(h[sheetName] || []).filter(t => !texts.includes(t))].slice(0, 12);
       try { localStorage.setItem(HISTORY_KEY, JSON.stringify(h)); } catch (e) {}
     }
+
+    function forgetTask(sheetName, text) {
+      const h = loadHistory();
+      h[sheetName] = (h[sheetName] || []).filter(t => t !== text);
+      try { localStorage.setItem(HISTORY_KEY, JSON.stringify(h)); } catch (e) {}
+    }
+
+    // 長按項目 0.7 秒 → 確認後刪除（避免小朋友手滑，所以不放常駐的刪除鈕）
+    async function deleteTask(sheetName, id) {
+      const dataKey = sheetToKeyMap[sheetName];
+      const item = (cloudData[dataKey] || []).find(i => String(i.id) === String(id));
+      if (!item) return;
+      if (!confirm(`刪除「${item.text}」？`)) return;
+
+      cloudData[dataKey] = cloudData[dataKey].filter(i => i !== item);
+      forgetTask(sheetName, item.text);
+      renderLists();
+
+      await postToCloud({ action: 'delete_task', sheetName: sheetName, rowId: item.id });
+      setTimeout(fetchCloudData, 1500);
+    }
+
+    let pressTimer = null, pressStart = null, longPressed = false;
+    function cancelPress() { clearTimeout(pressTimer); pressTimer = null; }
+    document.addEventListener('pointerdown', e => {
+      longPressed = false;
+      const li = e.target.closest('li[data-sheet]');
+      if (!li) return;
+      pressStart = { x: e.clientX, y: e.clientY };
+      pressTimer = setTimeout(() => {
+        longPressed = true;
+        deleteTask(li.dataset.sheet, li.dataset.id);
+      }, 700);
+    });
+    document.addEventListener('pointermove', e => {
+      if (pressTimer && Math.hypot(e.clientX - pressStart.x, e.clientY - pressStart.y) > 10) cancelPress();
+    });
+    ['pointerup', 'pointercancel', 'contextmenu'].forEach(t => document.addEventListener(t, cancelPress));
+    // 長按後放開不要當成一次「點擊」（否則會順便勾選）
+    document.addEventListener('click', e => {
+      if (longPressed) { e.preventDefault(); e.stopPropagation(); longPressed = false; }
+    }, true);
 
     // presetText 有值 = 點常用項目；否則讀輸入框，可用「、」或「,」一次輸入多項
     async function handleAddTask(sheetName, inputId, presetText) {
@@ -799,6 +837,8 @@
         items.forEach(item => {
           const li = document.createElement('li');
           if (item.done) li.classList.add('completed');
+          li.dataset.sheet = cfg.sheet;
+          li.dataset.id = item.id;
           li.innerHTML = `<label>${taskCheckboxHtml(cfg, item)}<span>${esc(item.text)}</span></label>`;
           el.appendChild(li);
         });
