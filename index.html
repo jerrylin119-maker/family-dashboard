@@ -133,7 +133,7 @@
     ul { list-style: none; overflow-y: auto; flex: 1; min-height: 0; }
     li { display: flex; align-items: center; gap: 6px; padding: 3px 0; border-bottom: 1px solid #f3f4f6; }
     li.completed { text-decoration: line-through; color: var(--text-muted); }
-    input[type="checkbox"] { width: 16px; height: 16px; cursor: pointer; flex-shrink: 0; }
+    input[type="checkbox"] { width: 20px; height: 20px; cursor: pointer; flex-shrink: 0; }
     
     .input-group { display: flex; gap: 4px; margin-top: 4px; flex-shrink: 0; }
     .input-group input { flex: 1; padding: 4px 6px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.75rem; }
@@ -157,6 +157,34 @@
     .edit-row span { width: 40px; font-weight: bold; }
     .edit-row input { padding: 3px 6px; border: 1px solid #ccc; border-radius: 4px; }
 
+    /* 整列可點（小朋友點文字也能勾選） */
+    li label { display: flex; align-items: center; gap: 6px; flex: 1; cursor: pointer; padding: 2px 0; font-size: 0.75rem; }
+
+    /* 常用項目一鍵新增 */
+    .chips { display: flex; gap: 4px; overflow-x: auto; margin-top: 4px; flex-shrink: 0; }
+    .chip { background: #eef2ff; color: #4338ca; border: 1px dashed #a5b4fc; padding: 3px 9px; border-radius: 999px; font-size: 0.7rem; white-space: nowrap; font-weight: 600; }
+
+    /* 睡前檢視 */
+    .btn-review { background: #4f46e5; color: #fff; padding: 2px 8px; font-size: 0.75rem; border-radius: 4px; }
+    #review-modal { width: 96%; max-width: 780px; max-height: 92vh; overflow-y: auto; }
+    .review-chore { font-size: 0.85rem; background: #fdf4ff; border: 1px solid #f0abfc; border-radius: 8px; padding: 6px 10px; margin-bottom: 10px; }
+    .review-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .review-col { border-radius: 10px; padding: 10px; border: 2px solid; }
+    .review-col.timmy { border-color: var(--timmy); background: #f0f9ff; }
+    .review-col.chloe { border-color: var(--chloe); background: #fdf2f8; }
+    .review-col h4 { display: flex; justify-content: space-between; align-items: center; font-size: 1rem; }
+    .review-col.timmy h4 { color: var(--timmy); }
+    .review-col.chloe h4 { color: var(--chloe); }
+    .progress { height: 8px; background: #e5e7eb; border-radius: 4px; overflow: hidden; margin: 4px 0 6px; }
+    .progress > div { height: 100%; background: var(--accent); transition: width 0.3s; }
+    .review-group { font-size: 0.7rem; color: var(--text-muted); font-weight: 700; margin-top: 8px; }
+    .review-item { display: flex; align-items: center; gap: 8px; font-size: 0.95rem; padding: 6px 0; cursor: pointer; }
+    .review-item input { width: 22px; height: 22px; }
+    .review-item.done { color: var(--text-muted); text-decoration: line-through; }
+    .review-item.pending { color: #b91c1c; font-weight: 700; }
+    .review-empty { font-size: 0.8rem; color: var(--text-muted); padding: 4px 0; }
+    .review-all-done { text-align: center; font-weight: 800; color: #047857; background: #d1fae5; border-radius: 8px; padding: 6px; margin-top: 8px; }
+
     /* ========================================================
        📱 手機模式：解除高度限制，變成單欄向下滾動
        ======================================================== */
@@ -167,6 +195,7 @@
       .grid { grid-template-columns: 1fr !important; grid-template-rows: auto !important; height: auto !important; }
       .card { min-height: auto !important; height: auto !important; overflow: visible !important; }
       ul { overflow-y: visible !important; }
+      .review-cols { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -180,6 +209,7 @@
     </div>
     <div style="text-align: right;">
       <div id="clock" class="clock">00:00:00</div>
+      <button class="btn-review" onclick="openReview()">🌙 睡前檢視</button>
       <button onclick="fetchCloudData()" style="background: #e5e7eb; color: var(--text); padding: 2px 6px; font-size: 0.7rem; border-radius: 4px;">🔄 整理</button>
       <button onclick="testSpeech()" style="background: #e5e7eb; color: var(--text); padding: 2px 6px; font-size: 0.7rem; border-radius: 4px;">🔊 語音</button>
     </div>
@@ -294,6 +324,16 @@
     </div>
   </dialog>
 
+  <!-- 睡前檢視彈窗 -->
+  <dialog id="review-modal">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+      <h3 style="font-size: 1.1rem;">🌙 睡前檢視：今天都做完了嗎？</h3>
+      <button class="btn-reset" onclick="closeReview()">關閉</button>
+    </div>
+    <div id="review-chore" class="review-chore"></div>
+    <div id="review-body" class="review-cols"></div>
+  </dialog>
+
   <script>
     // 家庭看板專用的 API 網址
     const API_URL = "https://script.google.com/macros/s/AKfycby0wGYcXHbGfaG8UEI7qt4eqVvYEX2E95hQFC4qNWMNa_dPeMr5v2zMGO__P6o7WSM74g/exec";
@@ -347,6 +387,15 @@
       brush: { "爸爸": {}, "媽媽": {}, "Timmy": {}, "Chloe": {} }
     };
 
+    const LIST_CONFIGS = [
+      { key: 'morning_timmy', sheet: 'Timmy', el: 'morning-timmy-list', cat: '早餐備忘', mem: 'Timmy' },
+      { key: 'morning_chloe', sheet: 'Chloe', el: 'morning-chloe-list', cat: '早餐備忘', mem: 'Chloe' },
+      { key: 'night_timmy', sheet: 'Night_Timmy', el: 'night-timmy-list', cat: '晚間待辦', mem: 'Timmy' },
+      { key: 'night_chloe', sheet: 'Night_Chloe', el: 'night-chloe-list', cat: '晚間待辦', mem: 'Chloe' },
+      { key: 'study_timmy', sheet: 'Study_Timmy', el: 'study-timmy-list', cat: '讀書計畫', mem: 'Timmy' },
+      { key: 'parent_notes', sheet: 'Notes', el: 'parent-notes-list', cat: '爸媽叮嚀', mem: '' }
+    ];
+
     const sheetToKeyMap = {
       'Timmy': 'morning_timmy',
       'Chloe': 'morning_chloe',
@@ -360,6 +409,7 @@
     let timeLeft = 180;
     let isRunning = false;
     let triggeredToday = {};
+    let triggeredDate = '';
     let cachedVoices = [];
 
     function initVoices() {
@@ -467,18 +517,34 @@
       }
     }
 
-    async function handleAddTask(sheetName, inputId) {
+    const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+    // 曾經新增過的項目（存在這台裝置），用來做「常用項目」一鍵新增
+    const HISTORY_KEY = 'familyBoardHistory';
+    function loadHistory() {
+      try { return JSON.parse(localStorage.getItem(HISTORY_KEY)) || {}; } catch (e) { return {}; }
+    }
+    function rememberTasks(sheetName, texts) {
+      const h = loadHistory();
+      h[sheetName] = [...texts, ...(h[sheetName] || []).filter(t => !texts.includes(t))].slice(0, 12);
+      try { localStorage.setItem(HISTORY_KEY, JSON.stringify(h)); } catch (e) {}
+    }
+
+    // presetText 有值 = 點常用項目；否則讀輸入框，可用「、」或「,」一次輸入多項
+    async function handleAddTask(sheetName, inputId, presetText) {
       const input = document.getElementById(inputId);
-      const text = input.value.trim();
-      if (!text) return;
-      input.value = '';
+      const raw = presetText !== undefined ? presetText : input.value;
+      const texts = raw.split(/[、,，;；]+/).map(t => t.trim()).filter(Boolean);
+      if (!texts.length) return;
+      if (presetText === undefined) { input.value = ''; input.focus(); }
 
       const dataKey = sheetToKeyMap[sheetName];
       if (!cloudData[dataKey]) cloudData[dataKey] = [];
-      cloudData[dataKey].push({ id: Date.now(), text: text, done: false });
+      texts.forEach((text, i) => cloudData[dataKey].push({ id: Date.now() + i, text: text, done: false }));
+      rememberTasks(sheetName, texts);
       renderLists();
 
-      await postToCloud({ action: 'add_task', sheetName: sheetName, text: text });
+      for (const text of texts) await postToCloud({ action: 'add_task', sheetName: sheetName, text: text });
       setTimeout(fetchCloudData, 2000);
     }
 
@@ -503,10 +569,10 @@
       });
     }
 
-    async function handleBrushCheck(name) {
+    async function handleBrushCheck(name, forcedSession) {
       const currentHour = new Date().getHours();
-      const session = currentHour < 14 ? 'morning' : 'night';
-      
+      const session = forcedSession || (currentHour < 14 ? 'morning' : 'night');
+
       if (!cloudData.brush[name]) cloudData.brush[name] = {};
       cloudData.brush[name][session] = true;
       renderBrushStatus();
@@ -545,11 +611,17 @@
       cloudData.parent_notes = data.parent_notes && data.parent_notes.length ? data.parent_notes : cloudData.parent_notes;
       cloudData.brush = data.brush || {};
       cloudData.chore_today_done = data.chore_today_done || { done: false, time: '' };
-      
+
       if (data.chores && data.chores.length === 7) {
         cloudData.chores = data.chores;
       }
-      
+
+      // 記住目前的項目（讀書計畫每天會被清空，隔天可從常用項目一鍵加回）
+      LIST_CONFIGS.forEach(cfg => {
+        const texts = (cloudData[cfg.key] || []).map(i => i.text).filter(Boolean);
+        if (texts.length) rememberTasks(cfg.sheet, texts);
+      });
+
       document.getElementById('sync-status').innerText = "✅ 雲端已同步 (" + new Date().toLocaleTimeString().substring(0,5) + ")";
       
       // 每次讀取完雲端資料，強制檢查是否已經換日
@@ -600,6 +672,12 @@
       // 即時跨日檢查
       checkAndResetDaily();
 
+      // 看板整天開著時，語音提醒每天都要重新觸發
+      if (triggeredDate !== now.toDateString()) {
+        triggeredToday = {};
+        triggeredDate = now.toDateString();
+      }
+
       if (now.getSeconds() === 0 && now.getMinutes() % 2 === 0) fetchCloudData();
 
       if (hmStr === "07:00" && !triggeredToday["07:00"]) {
@@ -615,6 +693,12 @@
         const chore = chores[now.getDay()];
         speak(`睡前時間到了，今日輪值由${chore.person}負責${chore.chore}，請大家完成睡前刷牙打卡！`);
         triggeredToday["21:00"] = true;
+      }
+      if (hmStr === "23:30" && !triggeredToday["23:30"]) {
+        speak("睡前檢視時間到了，請 Timmy 和 Chloe 確認今天的任務和家事都完成了！");
+        fetchCloudData();
+        if (!isReviewOpen()) openReview();
+        triggeredToday["23:30"] = true;
       }
     }
     setInterval(updateClock, 1000);
@@ -699,19 +783,15 @@
           statusEl.innerText = '未打卡';
         }
       });
+      if (isReviewOpen()) renderReview();
+    }
+
+    function taskCheckboxHtml(cfg, item) {
+      return `<input type="checkbox" ${item.done ? 'checked' : ''} onchange="handleToggleTask('${cfg.sheet}', ${item.id}, ${item.done}, '${cfg.key}', '${cfg.cat}', '${cfg.mem}')">`;
     }
 
     function renderLists() {
-      const configs = [
-        { key: 'morning_timmy', sheet: 'Timmy', el: 'morning-timmy-list', cat: '早餐備忘', mem: 'Timmy' },
-        { key: 'morning_chloe', sheet: 'Chloe', el: 'morning-chloe-list', cat: '早餐備忘', mem: 'Chloe' },
-        { key: 'night_timmy', sheet: 'Night_Timmy', el: 'night-timmy-list', cat: '晚間待辦', mem: 'Timmy' },
-        { key: 'night_chloe', sheet: 'Night_Chloe', el: 'night-chloe-list', cat: '晚間待辦', mem: 'Chloe' },
-        { key: 'study_timmy', sheet: 'Study_Timmy', el: 'study-timmy-list', cat: '讀書計畫', mem: 'Timmy' },
-        { key: 'parent_notes', sheet: 'Notes', el: 'parent-notes-list', cat: '爸媽叮嚀', mem: '' }
-      ];
-
-      configs.forEach(cfg => {
+      LIST_CONFIGS.forEach(cfg => {
         const el = document.getElementById(cfg.el);
         if (!el) return;
         const items = cloudData[cfg.key] || [];
@@ -719,13 +799,103 @@
         items.forEach(item => {
           const li = document.createElement('li');
           if (item.done) li.classList.add('completed');
-          li.innerHTML = `
-            <input type="checkbox" ${item.done ? 'checked' : ''} onchange="handleToggleTask('${cfg.sheet}', ${item.id}, ${item.done}, '${cfg.key}', '${cfg.cat}', '${cfg.mem}')">
-            <span style="flex:1; font-size:0.75rem;">${item.text}</span>
-          `;
+          li.innerHTML = `<label>${taskCheckboxHtml(cfg, item)}<span>${esc(item.text)}</span></label>`;
           el.appendChild(li);
         });
       });
+      renderChips();
+      if (isReviewOpen()) renderReview();
+    }
+
+    // 每個輸入框上方：曾經新增過、但現在清單裡沒有的項目，點一下就加回
+    function renderChips() {
+      const history = loadHistory();
+      LIST_CONFIGS.forEach(cfg => {
+        const inputId = cfg.el.replace('-list', '-input');
+        const group = document.getElementById(inputId).parentNode;
+        let box = document.getElementById(`chips-${cfg.key}`);
+        if (!box) {
+          box = document.createElement('div');
+          box.id = `chips-${cfg.key}`;
+          box.className = 'chips';
+          group.parentNode.insertBefore(box, group);
+        }
+        const current = (cloudData[cfg.key] || []).map(i => i.text);
+        const suggestions = (history[cfg.sheet] || []).filter(t => !current.includes(t)).slice(0, 5);
+        box.innerHTML = '';
+        box.style.display = suggestions.length ? 'flex' : 'none';
+        suggestions.forEach(t => {
+          const b = document.createElement('button');
+          b.className = 'chip';
+          b.textContent = `+ ${t}`;
+          b.onclick = () => handleAddTask(cfg.sheet, inputId, t);
+          box.appendChild(b);
+        });
+      });
+    }
+
+    function isReviewOpen() {
+      return document.getElementById('review-modal').open;
+    }
+    function openReview() {
+      renderReview();
+      document.getElementById('review-modal').showModal();
+    }
+    function closeReview() {
+      document.getElementById('review-modal').close();
+    }
+
+    // 睡前檢視：Timmy / Chloe 各自今天的任務、刷牙、家事完成狀況
+    function renderReview() {
+      const chores = cloudData.chores || defaultChores;
+      const todayChore = chores[new Date().getDay()] || defaultChores[new Date().getDay()];
+      const choreDone = !!(cloudData.chore_today_done && cloudData.chore_today_done.done);
+
+      document.getElementById('review-chore').innerText =
+        `🧹 今日家事：${todayChore.person} - ${todayChore.chore}　${choreDone ? `✅ 已完成 (${cloudData.chore_today_done.time})` : '⏳ 尚未完成'}`;
+
+      const kids = [
+        { name: 'Timmy', cls: 'timmy', emoji: '👦', keys: ['night_timmy', 'study_timmy', 'morning_timmy'] },
+        { name: 'Chloe', cls: 'chloe', emoji: '👧', keys: ['night_chloe', 'morning_chloe'] }
+      ];
+
+      document.getElementById('review-body').innerHTML = kids.map(kid => {
+        let done = 0, total = 0;
+        let html = '';
+        const row = (checked, label, onchange) => {
+          total++; if (checked) done++;
+          return `<label class="review-item ${checked ? 'done' : 'pending'}">
+            <input type="checkbox" ${checked ? 'checked disabled' : ''} onchange="${onchange}">${esc(label)}</label>`;
+        };
+
+        kid.keys.forEach(key => {
+          const cfg = LIST_CONFIGS.find(c => c.key === key);
+          const items = cloudData[key] || [];
+          html += `<div class="review-group">${cfg.cat}</div>`;
+          html += items.length
+            ? items.map(item => row(item.done, item.text,
+                `handleToggleTask('${cfg.sheet}', ${item.id}, ${item.done}, '${cfg.key}', '${cfg.cat}', '${cfg.mem}')`)).join('')
+            : '<div class="review-empty">沒有事項</div>';
+        });
+
+        const brushDone = !!(cloudData.brush && cloudData.brush[kid.name] && cloudData.brush[kid.name].night);
+        html += '<div class="review-group">睡前</div>' +
+          row(brushDone, '🪥 睡前刷牙', `handleBrushCheck('${kid.name}', 'night')`);
+
+        if (todayChore.person.toLowerCase() === kid.name.toLowerCase()) {
+          html += '<div class="review-group">今日家事</div>' +
+            row(choreDone, `🧹 ${todayChore.chore}`, 'handleChoreCheck()');
+        }
+
+        const pct = total ? Math.round(done / total * 100) : 0;
+        const allDone = total > 0 && done === total;
+        return `<div class="review-col ${kid.cls}">
+          <h4><span>${kid.emoji} ${kid.name}</span><span>${done} / ${total}</span></h4>
+          <div class="progress"><div style="width:${pct}%"></div></div>
+          ${html}
+          ${allDone ? '<div class="review-all-done">🎉 全部完成，可以安心睡覺了！</div>' : ''}
+        </div>`;
+      }).join('');
     }
 
     function renderChores() {
@@ -749,6 +919,7 @@
           <span class="badge">${c.day}</span> <b>${c.person}</b> - ${c.chore} ${i === dayIdx ? '👈' : ''}
         </li>
       `).join('');
+      if (isReviewOpen()) renderReview();
     }
 
     function openChoreModal() {
@@ -781,6 +952,14 @@
       await postToCloud({ action: 'update_chores', chores: updated });
       setTimeout(fetchCloudData, 1500);
     }
+
+    // 輸入框按 Enter 直接新增（注音/拼音選字用的 Enter 不算）
+    LIST_CONFIGS.forEach(cfg => {
+      const inputId = cfg.el.replace('-list', '-input');
+      document.getElementById(inputId).addEventListener('keydown', e => {
+        if (e.key === 'Enter' && !e.isComposing && e.keyCode !== 229) handleAddTask(cfg.sheet, inputId);
+      });
+    });
 
     updateClock();
     renderBrushStatus();
