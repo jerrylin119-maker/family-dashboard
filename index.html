@@ -146,8 +146,17 @@
     .sub-section.parent { border-color: var(--parent); }
 
     .badge { padding: 1px 4px; border-radius: 4px; font-size: 0.65rem; background: #e5e7eb; }
-    .chore-highlight { font-size: 1rem; font-weight: bold; color: #ec4899; text-align: center; margin: 2px 0; }
-    .chore-action-box { text-align: center; margin: 4px 0; }
+    .chore-today { display: flex; flex-direction: column; gap: 5px; margin: 2px 0 6px; flex-shrink: 0; }
+    .chore-row { display: flex; justify-content: space-between; align-items: center; gap: 6px; }
+    .chore-who { font-size: 0.95rem; font-weight: bold; color: #ec4899; }
+    .chore-who.done { color: var(--text-muted); text-decoration: line-through; }
+    .chore-none { text-align: center; color: var(--text-muted); font-size: 0.85rem; }
+    #chore-modal { max-width: 520px; max-height: 92vh; overflow-y: auto; }
+    .edit-day { margin-bottom: 8px; }
+    .edit-day-title { font-weight: 800; font-size: 0.85rem; margin-bottom: 3px; }
+    .edit-row input { min-width: 0; }
+    .btn-del { background: #fee2e2; color: #b91c1c; padding: 3px 8px; }
+    .btn-add-chore { background: #eef2ff; color: #4338ca; padding: 3px 8px; font-size: 0.75rem; }
     .btn-chore-done { background: #10b981; color: white; padding: 4px 12px; font-size: 0.8rem; border-radius: 6px; cursor: pointer; }
     .btn-chore-done.completed { background: #d1fae5; color: #065f46; border: 1.5px solid #10b981; cursor: default; }
 
@@ -294,10 +303,7 @@
         <span>🧹 今日輪值家事</span>
         <button style="background: transparent; color: var(--primary); font-size: 0.7rem; padding: 0;" onclick="openChoreModal()">⚙️ 設定</button>
       </h2>
-      <div id="chore-display" class="chore-highlight">載入中...</div>
-      <div class="chore-action-box">
-        <button id="btn-chore-done" class="btn-chore-done" onclick="handleChoreCheck()">✨ 完成今日家事</button>
-      </div>
+      <div id="chore-today" class="chore-today">載入中...</div>
       <ul id="chore-schedule" style="font-size: 0.75rem; color: var(--text-muted);"></ul>
     </div>
 
@@ -378,13 +384,15 @@
       { day: '週六', person: 'CHLOE', chore: '清貓砂' }
     ];
 
+    const DAYS = ['週日', '週一', '週二', '週三', '週四', '週五', '週六'];
+
     let cloudData = {
       morning_timmy: [], morning_chloe: [],
       night_timmy: [], night_chloe: [],
       study_timmy: [],
       parent_notes: [{ id: 1, text: '每天保持好心情，多喝水！', done: false }],
-      chores: defaultChores,
-      chore_today_done: { done: false, time: '' },
+      // 家事清單：同一天可以有多筆（多個人或多項），每筆各自有完成狀態
+      chore_list: defaultChores.map(c => ({ ...c, done: false, time: '' })),
       brush: { "爸爸": {}, "媽媽": {}, "Timmy": {}, "Chloe": {} }
     };
 
@@ -497,8 +505,8 @@
         
         // 3. 刷牙與家事歸零
         cloudData.brush = { "爸爸": {}, "媽媽": {}, "Timmy": {}, "Chloe": {} };
-        cloudData.chore_today_done = { done: false, time: '' };
-        
+        cloudData.chore_list.forEach(c => { c.done = false; c.time = ''; });
+
         // 發送強制清空指令給雲端
         // （雲端每天只會真的重置一次；若別的裝置已重置過，重新讀取後就會回到雲端的實際狀態）
         postToCloud({ action: 'daily_reset' });
@@ -619,25 +627,23 @@
       await postToCloud({ action: 'brush_check', member: name, session: session });
     }
 
-    async function handleChoreCheck() {
-      if (cloudData.chore_today_done && cloudData.chore_today_done.done) return;
-      
-      const now = new Date();
-      const timeStr = now.toTimeString().split(' ')[0].substring(0, 5);
-      const chores = cloudData.chores || defaultChores;
-      const todayChore = chores[now.getDay()] || defaultChores[now.getDay()];
+    // 今天的家事（同一天可能有多筆），idx 是在 chore_list 裡的位置
+    function todayChores() {
+      const today = DAYS[new Date().getDay()];
+      return cloudData.chore_list.map((c, idx) => ({ c, idx })).filter(x => x.c.day === today);
+    }
 
-      cloudData.chore_today_done = { done: true, time: timeStr };
+    async function handleChoreCheck(idx) {
+      const c = cloudData.chore_list[idx];
+      if (!c || c.done) return;
+
+      c.done = true;
+      c.time = new Date().toTimeString().substring(0, 5);
       renderChores();
-      
-      speak(`太棒了！今日${todayChore.person}的家事已完成打卡！`);
-      
-      await postToCloud({
-        action: 'chore_check',
-        day: todayChore.day,
-        person: todayChore.person,
-        chore: todayChore.chore
-      });
+
+      speak(`太棒了！${c.person}的家事${c.chore}已完成打卡！`);
+
+      await postToCloud({ action: 'chore_check', day: c.day, person: c.person, chore: c.chore });
     }
 
     window.handleCloudResponse = function(data) {
@@ -648,10 +654,19 @@
       cloudData.study_timmy = data.study_timmy || [];
       cloudData.parent_notes = data.parent_notes && data.parent_notes.length ? data.parent_notes : cloudData.parent_notes;
       cloudData.brush = data.brush || {};
-      cloudData.chore_today_done = data.chore_today_done || { done: false, time: '' };
 
-      if (data.chores && data.chores.length === 7) {
-        cloudData.chores = data.chores;
+      if (Array.isArray(data.chore_list) && data.chore_list.length) {
+        cloudData.chore_list = data.chore_list.map(c => ({
+          day: c.day, person: c.person, chore: c.chore, done: !!c.done, time: c.time || ''
+        }));
+      } else if (data.chores && data.chores.length === 7) {
+        // 舊版後端（每天只有一人、只有一個完成旗標）
+        const todayDone = !!(data.chore_today_done && data.chore_today_done.done);
+        cloudData.chore_list = data.chores.map((c, i) => ({
+          day: c.day, person: c.person, chore: c.chore,
+          done: todayDone && i === new Date().getDay(),
+          time: (data.chore_today_done && data.chore_today_done.time) || ''
+        }));
       }
 
       // 記住目前的項目（讀書計畫每天會被清空，隔天可從常用項目一鍵加回）
@@ -727,9 +742,8 @@
         triggeredToday["19:30"] = true;
       }
       if (hmStr === "21:00" && !triggeredToday["21:00"]) {
-        const chores = cloudData.chores || defaultChores;
-        const chore = chores[now.getDay()];
-        speak(`睡前時間到了，今日輪值由${chore.person}負責${chore.chore}，請大家完成睡前刷牙打卡！`);
+        const who = todayChores().map(({ c }) => `${c.person}負責${c.chore}`).join('，');
+        speak(`睡前時間到了，${who ? `今日輪值由${who}，` : ''}請大家完成睡前刷牙打卡！`);
         triggeredToday["21:00"] = true;
       }
       if (hmStr === "23:30" && !triggeredToday["23:30"]) {
@@ -887,12 +901,10 @@
 
     // 睡前檢視：Timmy / Chloe 各自今天的任務、刷牙、家事完成狀況
     function renderReview() {
-      const chores = cloudData.chores || defaultChores;
-      const todayChore = chores[new Date().getDay()] || defaultChores[new Date().getDay()];
-      const choreDone = !!(cloudData.chore_today_done && cloudData.chore_today_done.done);
-
-      document.getElementById('review-chore').innerText =
-        `🧹 今日家事：${todayChore.person} - ${todayChore.chore}　${choreDone ? `✅ 已完成 (${cloudData.chore_today_done.time})` : '⏳ 尚未完成'}`;
+      const today = todayChores();
+      document.getElementById('review-chore').innerText = today.length
+        ? '🧹 今日家事：' + today.map(({ c }) => `${c.person} ${c.chore} ${c.done ? `✅ (${c.time})` : '⏳'}`).join('　')
+        : '🧹 今天沒有家事';
 
       const kids = [
         { name: 'Timmy', cls: 'timmy', emoji: '👦', keys: ['night_timmy', 'study_timmy', 'morning_timmy'] },
@@ -922,9 +934,11 @@
         html += '<div class="review-group">睡前</div>' +
           row(brushDone, '🪥 睡前刷牙', `handleBrushCheck('${kid.name}', 'night')`);
 
-        if (todayChore.person.toLowerCase() === kid.name.toLowerCase()) {
+        // 人名欄含小朋友的名字就算（例如「TIMMY」或「Timmy 和 Chloe」）
+        const kidChores = today.filter(({ c }) => c.person.toLowerCase().includes(kid.name.toLowerCase()));
+        if (kidChores.length) {
           html += '<div class="review-group">今日家事</div>' +
-            row(choreDone, `🧹 ${todayChore.chore}`, 'handleChoreCheck()');
+            kidChores.map(({ c, idx }) => row(c.done, `🧹 ${c.chore}`, `handleChoreCheck(${idx})`)).join('');
         }
 
         const pct = total ? Math.round(done / total * 100) : 0;
@@ -939,57 +953,75 @@
     }
 
     function renderChores() {
-      const chores = cloudData.chores || defaultChores;
+      const today = todayChores();
+      document.getElementById('chore-today').innerHTML = today.length
+        ? today.map(({ c, idx }) => `
+            <div class="chore-row">
+              <span class="chore-who ${c.done ? 'done' : ''}">${esc(c.person)}：${esc(c.chore)}</span>
+              <button class="btn-chore-done ${c.done ? 'completed' : ''}" onclick="handleChoreCheck(${idx})">${c.done ? `✅ ${esc(c.time)}` : '✨ 完成'}</button>
+            </div>`).join('')
+        : '<div class="chore-none">今天沒有家事 🎉</div>';
+
       const dayIdx = new Date().getDay();
-      const todayChore = chores[dayIdx] || defaultChores[dayIdx];
-      document.getElementById('chore-display').innerText = `${todayChore.person}：${todayChore.chore}`;
-
-      const btn = document.getElementById('btn-chore-done');
-      if (cloudData.chore_today_done && cloudData.chore_today_done.done) {
-        btn.className = 'btn-chore-done completed';
-        btn.innerText = `✅ 今日已完成 (${cloudData.chore_today_done.time})`;
-      } else {
-        btn.className = 'btn-chore-done';
-        btn.innerText = `✨ 完成今日家事`;
-      }
-
-      const scheduleEl = document.getElementById('chore-schedule');
-      scheduleEl.innerHTML = chores.map((c, i) => `
-        <li style="border:none; padding: 1px 0; ${i === dayIdx ? 'font-weight:bold; color:var(--primary);' : ''}">
-          <span class="badge">${c.day}</span> <b>${c.person}</b> - ${c.chore} ${i === dayIdx ? '👈' : ''}
-        </li>
-      `).join('');
+      document.getElementById('chore-schedule').innerHTML = DAYS.map((day, i) => {
+        const items = cloudData.chore_list.filter(c => c.day === day);
+        return `
+          <li style="border:none; padding: 1px 0; ${i === dayIdx ? 'font-weight:bold; color:var(--primary);' : ''}">
+            <span class="badge">${day}</span>
+            <span style="flex:1;">${items.length ? items.map(c => `<b>${esc(c.person)}</b> ${esc(c.chore)}`).join('；') : '—'} ${i === dayIdx ? '👈' : ''}</span>
+          </li>`;
+      }).join('');
       if (isReviewOpen()) renderReview();
     }
 
+    // 設定視窗：先改「草稿」，按儲存才會寫回；每天可以加任意多筆
+    let choreDraft = [];
     function openChoreModal() {
-      const chores = cloudData.chores || defaultChores;
-      const container = document.getElementById('chore-edit-list');
-      container.innerHTML = chores.map((c, i) => `
-        <div class="edit-row">
-          <span>${c.day}</span>
-          <input type="text" id="chore-p-${i}" value="${c.person}" style="width:70px;" placeholder="人">
-          <input type="text" id="chore-c-${i}" value="${c.chore}" style="flex:1;" placeholder="事">
-        </div>
-      `).join('');
+      choreDraft = cloudData.chore_list.map(c => ({ ...c }));
+      renderChoreModal();
       document.getElementById('chore-modal').showModal();
+    }
+    function renderChoreModal() {
+      document.getElementById('chore-edit-list').innerHTML = DAYS.map(day => {
+        const rows = choreDraft.map((c, i) => ({ c, i })).filter(x => x.c.day === day);
+        return `
+          <div class="edit-day">
+            <div class="edit-day-title">${day}</div>
+            ${rows.map(({ c, i }) => `
+              <div class="edit-row">
+                <input type="text" id="chore-p-${i}" value="${esc(c.person)}" style="width:120px;" placeholder="人" oninput="choreDraft[${i}].person = this.value">
+                <input type="text" value="${esc(c.chore)}" style="flex:1;" placeholder="事" oninput="choreDraft[${i}].chore = this.value">
+                <button class="btn-del" onclick="removeChoreDraft(${i})">✕</button>
+              </div>`).join('')}
+            <button class="btn-add-chore" onclick="addChoreDraft('${day}')">＋ ${day}再加一項</button>
+          </div>`;
+      }).join('');
+    }
+    function addChoreDraft(day) {
+      choreDraft.push({ day, person: '', chore: '', done: false, time: '' });
+      renderChoreModal();
+      const input = document.getElementById(`chore-p-${choreDraft.length - 1}`);
+      if (input) input.focus();
+    }
+    function removeChoreDraft(i) {
+      choreDraft.splice(i, 1);
+      renderChoreModal();
     }
 
     async function saveChores() {
-      const updated = [];
-      const days = ['週日','週一','週二','週三','週四','週五','週六'];
-      for (let i = 0; i < 7; i++) {
-        updated.push({
-          day: days[i],
-          person: document.getElementById(`chore-p-${i}`).value.trim() || '無',
-          chore: document.getElementById(`chore-c-${i}`).value.trim() || '無'
-        });
-      }
-      cloudData.chores = updated;
+      const list = [];
+      DAYS.forEach(day => choreDraft.filter(c => c.day === day).forEach(c => {
+        const person = c.person.trim(), chore = c.chore.trim();
+        if (!person && !chore) return;
+        list.push({ day, person: person || '無', chore: chore || '無', done: !!c.done, time: c.time || '' });
+      }));
+      if (!list.length) { alert('至少要保留一項家事'); return; }
+
+      cloudData.chore_list = list;
       document.getElementById('chore-modal').close();
       renderChores();
 
-      await postToCloud({ action: 'update_chores', chores: updated });
+      await postToCloud({ action: 'update_chores', chore_list: list });
       setTimeout(fetchCloudData, 1500);
     }
 
